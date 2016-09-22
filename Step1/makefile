@@ -11,23 +11,23 @@
 
 boot.bin: boot.asm 
 
-uodos.iso: boot.bin
+kappaOS.iso: boot.bin
 #	Get the blank floppy disk image
-	cp floppy_image/uodos.img uodos.img
+	cp floppy_image/uodos.img kappaOS.img
 #	Copy our new boot sector over to the floppy image
-	dd status=noxfer conv=notrunc if=boot.bin of=uodos.img
+	dd status=noxfer conv=notrunc if=boot.bin of=kappaOS.img
 #	If the cdiso folder exists, remove it and recreate it
 	rm -rf cdiso
 	mkdir cdiso
-	cp uodos.img cdiso/uodos.img
+	cp kappaOS.img cdiso/kappaOS.img
 #	Make a bootable CD image from the floppy disk image
-	mkisofs -o uodos.iso -b uodos.img cdiso/	
+	mkisofs -o kappaOS.iso -b kappaOS.img cdiso/	
 
-all: uodos.iso
+all: kappaOS.iso
 
 clean:
 	rm -f boot.bin
-	rm -f uodos.img
-	rm -f uodos.iso
+	rm -f kappaOS.img
+	rm -f kappaOS.iso
 	rm -rf cdiso
 	
