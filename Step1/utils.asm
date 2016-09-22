@@ -1,5 +1,3 @@
-
-
 ; Write to the console using BIOS.
 ; 
 ; Input: SI points to a null-terminated string
