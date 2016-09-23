@@ -9,12 +9,21 @@ BITS 16
 ; Tell the assembler that we will be loaded at 7C00 (That's where the BIOS loads boot loader code).
 
 ORG 7C00h
-	jmp 	Real_Mode_Start				; Jump past our sub-routines]
+	jmp 	Real_Mode_Start				; Jump past our sub-routines
 
 %include "utils.asm"
-	
+
 ;	Start of the actual boot loader code
 	
+Loop_Test:
+	mov 	al, 4Ch
+	int 	10h
+	mov 	al, 4Fh
+	int 	10h
+	loop	Loop_Test
+	ret		; end of loop
+
+
 Real_Mode_Start:
 	cli									; Prevent hardware interrupts occuring during the boot process}
     xor 	ax, ax						; Set stack segment (SS) to 0 and set stack size to 4K
@@ -25,8 +34,16 @@ Real_Mode_Start:
 	
 	mov 	si, boot_message			; Display our greeting
 	call 	Console_WriteLine_16
-	
+
+	;mov		al, 4Ch
+	;int 	10h
+	;mov 	al, 4Fh
+	;int 	10h
+	mov 	cx, 30
+	call	Loop_Test
+
 	hlt									; Halt the processor
+	ret									; End of real mode
 	
 ; Data
 boot_message:	db	'KappaOS v4.20', 0 ; Message followed by null character (0)

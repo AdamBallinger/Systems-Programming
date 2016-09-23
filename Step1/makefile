@@ -22,10 +22,7 @@ kappaOS.iso: boot.bin
 	cp kappaOS.img cdiso/kappaOS.img
 #	Make a bootable CD image from the floppy disk image
 	mkisofs -o kappaOS.iso -b kappaOS.img cdiso/	
-	rm -rf build
-	mkdir build
-	mv kappaOS.iso build/kappaOS.iso
-	mv kappaOS.img build/kappaOS.img
+	
 all: kappaOS.iso
 
 clean:
@@ -33,5 +30,4 @@ clean:
 	rm -f kappaOS.img
 	rm -f kappaOS.iso
 	rm -rf cdiso
-	rm -rf build
 	
