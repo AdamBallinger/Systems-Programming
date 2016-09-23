@@ -22,7 +22,7 @@ Console_Write_CRLF: ; Moves the cursor to a new line
 	int		10h ; Output the character to screen.
 	ret
 	
-Console_WriteLine_16 ; Writes a message to a the screen followed by a new line
+Console_WriteLine_16: ; Writes a message to a the screen followed by a new line
 	call Console_Write_16 ; Write the message.
 	call Console_Write_CRLF ; Move to new line.
 	ret
