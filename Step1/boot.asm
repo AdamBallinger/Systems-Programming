@@ -14,37 +14,17 @@ ORG 7C00h
 %include "utils.asm"
 
 ;	Start of the actual boot loader code
-	
-; Loop_Test:		; Output the characters 'L' and 'O' over and over until cx is 0
-	; mov 	al, 4Ch
-	; int 	10h
-	; mov 	al, 4Fh
-	; int 	10h
-	; mov		al, 178
-	; int		10h
-	; loop	Loop_Test	; if cx is not 0 then call Loop_Test. cx is decremented by 1 each time the loop iterates.
-	; ret		; end of loop	
-	
-; Loop_Line_16:
-	; mov 	si, boot_message			; Display our greeting
-	; call	Console_WriteLine_16
-	; loop	Loop_Line_16
-	; ret
 
 Real_Mode_Start:
 	cli									; Prevent hardware interrupts occuring during the boot process}
     xor 	ax, ax						; Set stack segment (SS) to 0 and set stack size to 4K
     mov 	ss, ax
     mov 	sp, 4000h
-
     mov 	ds, ax						; Set data segment (DS) to 0.
 	
 	mov 	si, boot_message			; Display our greeting
 	call	Console_WriteLine_16
 	
-	;mov 	cx, 30		; cx stores the number of times the loop function should run and is auto decremented when loop is called.
-	;call	Loop_Test
-
 	hlt									; Halt the processor
 	ret									; End of real mode
 	
