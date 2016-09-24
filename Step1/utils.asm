@@ -10,12 +10,12 @@ Console_Write_16:
 Console_Write_16_Repeat: 
 	lodsb								; Load byte at SI into AL and increment SI
 	test 	al, al						; If the byte is 0, we are done
-	je 		Console_Write_16_Donzo
+	je 		Console_Write_16_Done
 	int 	10h							; Output character to screen
 	jmp 	Console_Write_16_Repeat
 	ret		; end of write repeat
 
-Console_Write_16_Donzo:
+Console_Write_16_Done:
     ret
 	
 Console_Write_CRLF: ; Moves the cursor to a new line
