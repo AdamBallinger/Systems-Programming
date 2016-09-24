@@ -50,12 +50,13 @@ Real_Mode_Start:
 	
 ; Data; Message followed by null character (0)
 boot_message:
+		;db	"Hello world!", 0Dh, 0Ah,
 		db	" _  __                             ___   ____           _  _      ____    ___  ", 0Dh, 0Ah, ; Carriage return and Line feed at end of line
 		db	"| |/ / __ _  _ __   _ __    __ _  / _ \ / ___|  __   __| || |    |___ \  / _ \ ", 0Dh, 0Ah,
 		db	"| ' / / _` || '_ \ | '_ \  / _` || | | |\___ \  \ \ / /| || |_     __) || | | |", 0Dh, 0Ah,
 		db	"| . \| (_| || |_) || |_) || (_| || |_| | ___) |  \ V / |__   _|_  / __/ | |_| |", 0Dh, 0Ah,
 		db	"|_|\_\\__,_|| .__/ | .__/  \__,_| \___/ |____/    \_/     |_| (_)|_____| \___/ ", 0Dh, 0Ah,
-		db	"            |_|    |_|															", 0
+		db	"            |_|    |_|", 0
 
 ; Pad out the boot loader so that it will be exactly 512 bytes
 	times 510 - ($ - $$) db 0
