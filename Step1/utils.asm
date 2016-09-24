@@ -16,8 +16,7 @@ Console_Write_16_Repeat:
 	mov		bl,	03h ; foreground and background colour
 	mov		cx, 1 ; how many times to print it 
 	lodsb								; Load byte at SI into AL and increment SI
-	test 	al, al						; If the byte is 0, we are done
-	test	al,	0Dh
+	test 	al, al				; If the byte is 0, we are done
 	je 		Console_Write_16_Done
 	int		10h ; Output the character to screen.
 
