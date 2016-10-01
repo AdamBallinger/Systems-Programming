@@ -8,8 +8,9 @@ start:
 %include "utils.asm"
 %include "a20.asm"
 
+; Entry point for the second stage of the boot loader.
 Boot_Stage_2:	
-	cli
+	cli									; Clear interrupts
 	
 	mov		si, stage_start_message		; Display boot stage 2 loaded confirmation message
 	call	Console_WriteLine_16
@@ -17,37 +18,34 @@ Boot_Stage_2:
 	call	Test_A20_Enabled			; Test if the A20 line is already enabled
 	
 	cmp		ax, 0						; AX contains the result of Test_A20_Enabled if its 1 then A20 is enabled
-	je		Enable_A20_Line					; If AX is 0 then the A20 line is disabled and needs enabling
+	je		Enable_A20_Line				; If AX is 0 then the A20 line is disabled and needs enabling
 	
-	mov		si,	a20_enabled_message		; Otherwise display a message to show the A20 line is enabled
-	call	Console_WriteLine_16
-	
-	hlt									; halt for now
+	jmp		A20_Success					; Otherwise the A20 line is enabled
 	
 ; Attempt to enable the A20 line
 Enable_A20_Line:
 	mov		si,	a20_attempting_message
 	call	Console_WriteLine_16
 	
-	call 	Enable_A20
+	call 	Enable_A20		; Attempt to enable the A20 line
 	
 	cmp		dx,	0			; If DX (stores method used to enable A20 line) is 0 then no method was successful
 	jne		A20_Success		; If DX is anything other than 0 then a valid method was used to enable the A20 line
 	
 	call	A20_Failed		; Otherwise, no method to enable the A20 line worked so failed
 
-; Called when the A20 line fails to enable after all possible attempts
+; Called when the A20 line fails to enable after all possible attempts, and halts the boot process
 A20_Failed:
 	mov		si, a20_error_message
 	call 	Console_WriteLine_16		; Output that we couldn't enable the A20 line
 	hlt									; Prevent boot process from continuing
 	
+; Called when the A20 line has been successfully enabled, and prints out which method was used to enable it
 A20_Success:
-	mov		si, a20_enabled_message
+	mov		si, a20_enabled_message		; Print out the message notifying us the A20 line has been successfully enabled
 	call	Console_WriteLine_16
 	
-	mov		si,	a
-	call	Console_WriteLine_16
+	; Switch like behaviour to test for which method enabled the A20 line.
 	
 	cmp		dx, 2			; BIOS function used to enable A20 line
 	je		A20_BIOS
@@ -58,25 +56,28 @@ A20_Success:
 	cmp		dx,	4			; Fast Gate method used to enable A20 line
 	je		A20_GATE
 	
-	call	A20_Failed		; If DX is not 2, 3, or 4 then something went wrong so just say it failed.
+	jmp	A20_Done		; If DX is not 2, 3, or 4 then it was already enabled
 	
+; Called if the A20 line is enabled through the BIOS function
 A20_BIOS:
 	mov		si,	a20_bios_method
 	call	Console_WriteLine_16
 	jmp		A20_Done
 
+; Called if the A20 line is enabled through the keyboard controller
 A20_KBD:
 	mov		si,	a20_kbd_method
 	call	Console_WriteLine_16
 	jmp		A20_Done
 
+; Called if the A20 line is enabled through the fast gate method
 A20_GATE:
 	mov		si,	a20_fast_gate_method
 	call	Console_WriteLine_16
 	jmp		A20_Done
 
+; Halt the boot process once the A20 line has been checked and enabled
 A20_Done:
-	
 	hlt
 
 	

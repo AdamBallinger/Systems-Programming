@@ -4,7 +4,7 @@
 
 .DEFAULT_GOAL:=all
 
-IMAGE=kappaOS
+IMAGE=QuackOS
 
 .SUFFIXES: .iso .img .bin .asm
 

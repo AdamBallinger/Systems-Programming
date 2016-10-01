@@ -64,7 +64,7 @@ Quit_Boot:
 	
 ; Data
 boot_device:		db	0	; Stores ID for boot device (Passed by BIOS in DL at start)
-boot_message: 		db	'Booting QuackOS v3.0', 0
+boot_message: 		db	'Booting QuackOS v1.0', 0
 read_failed_msg:	db	'Failed to read boot stage 2', 0
 cannot_continue:	db	'Cannot continue with boot process.', 0
 	
