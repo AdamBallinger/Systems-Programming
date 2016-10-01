@@ -141,6 +141,6 @@ FastA20_Exit:
 	je	 	A20_Enabled
 	mov		dx, 0					; No method was successful in enabling A20 line
 	
-A20_Enabled		:
+A20_Enabled:
 	ret
 	
