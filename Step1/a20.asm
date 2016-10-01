@@ -3,10 +3,6 @@
 ; Returns: 0 in ax if the A20 line is disabled (memory wraps around)
 ;          1 in ax if the A20 line is enabled (memory does not wrap around)
 
-a:	db	"a", 0
-b:	db	"b", 0
-cc:	db	"c", 0
- 
 Test_A20_Enabled:
     pushf
     push 	ds
