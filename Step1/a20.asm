@@ -2,6 +2,10 @@
 ;
 ; Returns: 0 in ax if the A20 line is disabled (memory wraps around)
 ;          1 in ax if the A20 line is enabled (memory does not wrap around)
+
+a:	db	"a", 0
+b:	db	"b", 0
+cc:	db	"c", 0
  
 Test_A20_Enabled:
     pushf
@@ -69,30 +73,30 @@ Enable_A20_Using_Kbd_Controller:
 	push    eax
 
 	call    A20Wait_Input
-	mov     al,0D1h					; Issue command to say we are going to write to output port
-	out     64h,al
+	mov     al,	0D1h					; Issue command to say we are going to write to output port
+	out     64h, al
 
 	call    A20Wait_Input
 	pop     eax						; Retrieve byte that we read
 	or      al, 2					; Set bit to enable A20 line
-	out     60h,al					; and output it
+	out     60h, al					; and output it
 
 	call    A20Wait_Input			; Enable keyboard
-	mov     al,0AEh
-	out     64h,al
+	mov     al, 0AEh
+	out     64h, al
 
 	call    A20Wait_Input
 	ret
 
 A20Wait_Input:						; Wait for input buffer to be empty (wait for bit 1 to be 0). This must be empty before any attempt
-	in      al,64h					; is made to write to output ports 60h or 64h
-	test    al,2
+	in      al, 64h					; is made to write to output ports 60h or 64h
+	test    al, 2
 	jnz     A20Wait_Input
 	ret
 
 A20Wait_Output:						; Wait for output buffer to be full (must be set before attempting to read from input port 60h)
-	in      al,64h
-	test    al,1
+	in      al, 64h
+	test    al, 1
 	jz      A20Wait_Output
 	ret	
 
@@ -103,23 +107,23 @@ A20Wait_Output:						; Wait for output buffer to be full (must be set before att
 ;	3.	Attempt using the Fast A20 gate
 ;
 
-Enable_A20:
+Enable_A20:	
 	call 	Test_A20_Enabled		; First see if it is already enabled.  If so, there is nothing to do.
 	mov		dx, 1					; Indicate that A20 is already enabled
 	cmp		ax, 1
 	je	 	A20_Enabled
 	
 	mov 	ax, 2401h				; Try the BIOS function that enables the A20 line first (note that it is possible it is not supported)
-	int 	15h						
+	int 	15h	
 	
 	call 	Test_A20_Enabled		; Now see if A20 is enabled.  
-	mov		dx, 2
+	mov		dx, 2					; Use DX to store which method used to enable A20 DX = 2 means BIOS function was used
 	cmp		ax, 1
 	je	 	A20_Enabled
 	
-	Call	Enable_A20_Using_Kbd_Controller	; See if we can enable A20 using the keyboard controller`
+	call	Enable_A20_Using_Kbd_Controller	; See if we can enable A20 using the keyboard controller`
 	call 	Test_A20_Enabled		; Now see if A20 is enabled.  
-	mov		dx, 3
+	mov		dx, 3					; Keyboard controller was used to enable A20
 	cmp		ax, 1
 	je	 	A20_Enabled
 	
@@ -132,11 +136,11 @@ Enable_A20:
 
 FastA20_Exit:
 	call 	Test_A20_Enabled		; And see if A20 is enabled
-	mov		dx, 4
+	mov		dx, 4					; Fast A20 gate was used to enable A20
 	cmp		ax, 1
 	je	 	A20_Enabled
-	mov		dx, 0
+	mov		dx, 0					; No method was successful in enabling A20 line
 	
-A20_Enabled:	
+A20_Enabled		:
 	ret
 	

@@ -29,29 +29,32 @@ Real_Mode_Start:
 	mov 	si, boot_message			; Display our greeting
 	call 	Console_WriteLine_16
 	
+; Resets the disk ready to read
 Reset_Floppy:
 	mov		ah, 0					; Set interrupt 13 function to reset disk
 	mov		dl,	[boot_device]		; Set the drive to reset to the drive used for booting
 	int		13h						; Reset the disk
 	jc		Reset_Floppy			; If carry flag is set then there was error so try again
 	
+; Reads stage 2 for the boot loader from disk and puts it at memory address 9000h
 Read_Floppy:	
+	mov		bx, 9000h				; Memory address to load the next stage into
 	mov		ah,	02h					; Set interrupt 13 function to read disk
 	mov		al, 5					; Read 5 sectors from disk since stage 2 is 2560 bytes (5 * 512)
 	mov		ch,	0					; Read from cylinder 0
-	mov		bx, 9000h				; Memory address to load the next stage into
 	mov		cl, 2					; Read sector 2
 	mov		dh,	0					; Read from head 0
 	mov		dl,	[boot_device]		; Drive number to read from
-	int		13h
+	int		13h						; Call interrupt 13 to execute read disk function (AH = 02h)
 	cmp		al, 5					; AL contains number of read sectors. If not 5 then error
 	jne		Read_Failed
 	
-	mov		dl, [boot_device]
-	jmp		9000h
+	mov		dl, [boot_device]		; Pass boot device ID to stage 2
+	jmp		9000h					; Jump to stage 2
 	
+; Called if the Read_Floppy function doesn't read the required amount of sectors (5)
 Read_Failed:	
-	mov 	si, read_failed_msg
+	mov 	si, read_failed_msg			; Display Read failed message
 	call 	Console_WriteLine_16
 
 Quit_Boot:
@@ -60,8 +63,8 @@ Quit_Boot:
 	hlt
 	
 ; Data
-boot_device:		db	0
-boot_message: 		db	'Booting QuackOS v2.0', 0
+boot_device:		db	0	; Stores ID for boot device (Passed by BIOS in DL at start)
+boot_message: 		db	'Booting QuackOS v3.0', 0
 read_failed_msg:	db	'Failed to read boot stage 2', 0
 cannot_continue:	db	'Cannot continue with boot process.', 0
 	
