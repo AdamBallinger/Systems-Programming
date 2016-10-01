@@ -1,5 +1,19 @@
 Testing the A20 Line
 
-today i did gud :D
+In order to test if the A20 line was properly being enabled, I downloaded VirtualBox and loaded the boot loader into it to be sure if the output was correct.
+Expected output on the first run would be:
 
+Booting QuackOS v1.0
+Boot stage 2 started.
+Attempting to enable A20 line.
+A20 line is enabled!
+A20 enabled using the BIOS function
 
+This was the output given and the boot process correctly halts. To test if the other methods for enabling the A20 line worked however, I commented out each method of enabling the A20 line in order,
+resetting and checking the output in VirtualBox was correct. Each method successfully enabled the A20 line and all outputs were as expected. 
+Tests were also carried out to check the behaviour of the boot loader if all methods of enabling the A20 line were commented out. The results were the following output (as expected):
+
+Booting QuackOS v1.0
+Boot stage 2 started.
+Attempting to enable A20 line.
+Failed to enable A20 line!
