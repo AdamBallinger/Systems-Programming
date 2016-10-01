@@ -7,9 +7,7 @@
 BITS 16
 
 ; Tell the assembler that we will be loaded at 7C00 (That's where the BIOS loads boot loader code).
-
 ORG 7C00h
-
 start:
 	jmp 	Real_Mode_Start				; Jump past our sub-routines
 
@@ -23,35 +21,34 @@ Real_Mode_Start:
     mov 	ss, ax
     mov 	sp, 0FFFFh
 
-    mov 	ds, ax						; Set data segment registers (DS and ES) to 0.
-	mov		es, ax						
+    mov 	ds, ax						; Set data segment registers (DS and ES) to 0.					
+	mov		es, ax
 	
 	mov		[boot_device], dl			; Boot device number is passed in DL
 	
 	mov 	si, boot_message			; Display our greeting
 	call 	Console_WriteLine_16
 	
-	call	Reset_Floppy_Drive
+Reset_Floppy:
+	mov		ah, 0					; Set interrupt 13 function to reset disk
+	mov		dl,	[boot_device]		; Set the drive to reset to the drive used for booting
+	int		13h						; Reset the disk
+	jc		Reset_Floppy			; If carry flag is set then there was error so try again
 	
-Reset_Floppy_Drive:
-	mov		ah, 0						; Set INT 13H command to reset disk system.
-	mov		dl, [boot_device]			; Load sectors from the boot device.		
-	int		13h							; Reset disk system (AH = 00h)
-	jc		Reset_Floppy_Drive			; If carry flag is set, there was an error. Try resetting again	
-	
-	mov		ah, 02h						; BIOS Read sector functions_16
-	mov		al, 05						; Number of sectors to read = 5
-	mov		bx, 9000h					; The five segments will be loaded into memory at ES:BX (0000:9000h)
-	mov		ch, 0						; Use cylinder 0
-	mov 	dh, 0 						; Use head 0
-	mov		dl, [boot_device] 			
-	mov 	cl, 02						; Start reading at sector 2 (i.e. one after the boot sector)
-	int 	13h							; Read disk sectors into memory (AH = 02h)
-	cmp		al,	05						; AL returns the number of sectors read.  If this is not 5, report an error
+Read_Floppy:	
+	mov		ah,	02h					; Set interrupt 13 function to read disk
+	mov		al, 5					; Read 5 sectors from disk since stage 2 is 2560 bytes (5 * 512)
+	mov		ch,	0					; Read from cylinder 0
+	mov		bx, 9000h				; Memory address to load the next stage into
+	mov		cl, 2					; Read sector 2
+	mov		dh,	0					; Read from head 0
+	mov		dl,	[boot_device]		; Drive number to read from
+	int		13h
+	cmp		al, 5					; AL contains number of read sectors. If not 5 then error
 	jne		Read_Failed
-	    
-	mov		dl, [boot_device]			; Pass boot device to second stage
-    ;jmp 	9000h						; Run stage 2
+	
+	mov		dl, [boot_device]
+	jmp		9000h
 	
 Read_Failed:	
 	mov 	si, read_failed_msg
@@ -64,7 +61,7 @@ Quit_Boot:
 	
 ; Data
 boot_device:		db	0
-boot_message: 		db	'Booting QuackOS v1.0', 0
+boot_message: 		db	'Booting QuackOS v2.0', 0
 read_failed_msg:	db	'Failed to read boot stage 2', 0
 cannot_continue:	db	'Cannot continue with boot process.', 0
 	

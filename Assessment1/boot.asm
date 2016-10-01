@@ -31,7 +31,7 @@ Real_Mode_Start:
 
 Reset_Floppy_Drive:
 	mov		ah, 0						; Reset floppy disk function
-	mov		dl, [boot_device]						
+	mov		dl, [boot_device]					
 	int		13h						
 	jc		Reset_Floppy_Drive			; If carry flag is set, there was an error. Try resetting again	
 	
@@ -46,7 +46,7 @@ Reset_Floppy_Drive:
 	cmp		al, 5						; AL returns the number of sectors read.  If this is not 5, report an error
 	jne		Read_Failed
 	    
-	mov		dl, [boot_device]			; Pass boot device to second stage
+	mov		dl, [boot_device]				; Pass boot device to second stage
     jmp 	9000h						; Run stage 2
 	
 Read_Failed:	
@@ -60,8 +60,7 @@ Quit_Boot:
 	hlt						
 	
 ; Data
-
-boot_device			db  0
+boot_device:		db  0
 boot_message:		db	'UODos V1.0', 0
 read_failed_msg:	db	'Unable to read stage 2 of the boot process', 0
 cannot_continue:  	db	'Cannot continue boot process', 0
