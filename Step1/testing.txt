@@ -17,3 +17,5 @@ Booting QuackOS v1.0
 Boot stage 2 started.
 Attempting to enable A20 line.
 Failed to enable A20 line!
+
+For determining which method was used to enable the A20 line, comparing the value in the DX registry to 2 for BIOS function, 3 for keyboard controller, and 4 for fast gate method determined what message to output.

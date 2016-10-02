@@ -29,10 +29,10 @@ Enable_A20_Line:
 	
 	call 	Enable_A20		; Attempt to enable the A20 line
 	
-	cmp		dx,	0			; If DX (stores method used to enable A20 line) is 0 then no method was successful
-	jne		A20_Success		; If DX is anything other than 0 then a valid method was used to enable the A20 line
+	cmp		dx,	[failed_to_enable]		; If DX (stores method used to enable A20 line) is value stored in failed_to_enable then no method was successful
+	jne		A20_Success					; If DX is anything other than the value of failed_to_enable then a valid method was used to enable the A20 line
 	
-	call	A20_Failed		; Otherwise, no method to enable the A20 line worked so failed
+	call	A20_Failed					; Otherwise, no method to enable the A20 line worked so we failed
 
 ; Called when the A20 line fails to enable after all possible attempts, and halts the boot process
 A20_Failed:
@@ -42,21 +42,21 @@ A20_Failed:
 	
 ; Called when the A20 line has been successfully enabled, and prints out which method was used to enable it
 A20_Success:
-	mov		si, a20_enabled_message		; Print out the message notifying us the A20 line has been successfully enabled
+	mov		si, a20_enabled_message			; Print out the message notifying us the A20 line has been successfully enabled
 	call	Console_WriteLine_16
 	
-	; Switch like behaviour to test for which method enabled the A20 line.
+	; Switch like behaviour to test for which method enabled the A20 line by checking value stored in DX
 	
-	cmp		dx, 2			; BIOS function used to enable A20 line
+	cmp		dx, [bios_function]				; BIOS function used to enable A20 line
 	je		A20_BIOS
 	
-	cmp		dx,	3			; Keyboard controller used to enable A20 line
+	cmp		dx,	[kbd_controller]			; Keyboard controller used to enable A20 line
 	je		A20_KBD
 	
-	cmp		dx,	4			; Fast Gate method used to enable A20 line
+	cmp		dx,	[fast_gate_method]			; Fast Gate method used to enable A20 line
 	je		A20_GATE
 	
-	jmp	A20_Done		; If DX is not 2, 3, or 4 then it was already enabled
+	jmp		A20_Done						; If DX is not 2, 3, or 4 then it was already enabled by default
 	
 ; Called if the A20 line is enabled through the BIOS function
 A20_BIOS:
@@ -78,6 +78,7 @@ A20_GATE:
 
 ; Halt the boot process once the A20 line has been checked and enabled
 A20_Done:
+
 	hlt
 
 	

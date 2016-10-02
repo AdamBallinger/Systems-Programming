@@ -105,7 +105,7 @@ A20Wait_Output:						; Wait for output buffer to be full (must be set before att
 
 Enable_A20:	
 	call 	Test_A20_Enabled		; First see if it is already enabled.  If so, there is nothing to do.
-	mov		dx, 1					; Indicate that A20 is already enabled
+	mov		dx, [already_enabled]	; Indicate that A20 is already enabled
 	cmp		ax, 1
 	je	 	A20_Enabled
 	
@@ -113,13 +113,13 @@ Enable_A20:
 	int 	15h	
 	
 	call 	Test_A20_Enabled		; Now see if A20 is enabled.  
-	mov		dx, 2					; Use DX to store which method used to enable A20 DX = 2 means BIOS function was used
+	mov		dx, [bios_function]		; Use DX to store which method used to enable A20
 	cmp		ax, 1
 	je	 	A20_Enabled
 	
-	call	Enable_A20_Using_Kbd_Controller	; See if we can enable A20 using the keyboard controller`
-	call 	Test_A20_Enabled		; Now see if A20 is enabled.  
-	mov		dx, 3					; Keyboard controller was used to enable A20
+	call	Enable_A20_Using_Kbd_Controller		; See if we can enable A20 using the keyboard controller`
+	call 	Test_A20_Enabled					; Now see if A20 is enabled.  
+	mov		dx, [kbd_controller]				; Keyboard controller was used to enable A20
 	cmp		ax, 1
 	je	 	A20_Enabled
 	
@@ -131,12 +131,19 @@ Enable_A20:
 	out 	92h, al
 
 FastA20_Exit:
-	call 	Test_A20_Enabled		; And see if A20 is enabled
-	mov		dx, 4					; Fast A20 gate was used to enable A20
+	call 	Test_A20_Enabled			; And see if A20 is enabled
+	mov		dx, [fast_gate_method]		; Fast A20 gate was used to enable A20
 	cmp		ax, 1
 	je	 	A20_Enabled
-	mov		dx, 0					; No method was successful in enabling A20 line
+	mov		dx, [failed_to_enable]		; No method was successful in enabling A20 line
 	
 A20_Enabled:
 	ret
+	
+; Use variables to store which method was used to enable A20 rather than arbitrary numbers
+failed_to_enable:	db		0
+already_enabled:	db		1
+bios_function:		db		2
+kbd_controller:		db		3
+fast_gate_method:	db		4
 	
