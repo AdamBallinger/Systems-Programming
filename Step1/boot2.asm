@@ -17,7 +17,7 @@ Boot_Stage_2:
 	
 	call	Test_A20_Enabled			; Test if the A20 line is already enabled
 	
-	cmp		ax, 0						; AX contains the result of Test_A20_Enabled if its 1 then A20 is enabled
+	cmp		ax, 0						; AX contains the result of Test_A20_Enabled. If the value is 0 then we need to enable it
 	je		Enable_A20_Line				; If AX is 0 then the A20 line is disabled and needs enabling
 	
 	jmp		A20_Success					; Otherwise the A20 line is enabled
@@ -25,9 +25,9 @@ Boot_Stage_2:
 ; Attempt to enable the A20 line
 Enable_A20_Line:
 	mov		si,	a20_attempting_message
-	call	Console_WriteLine_16
+	call	Console_WriteLine_16		; Display message notifying user we are attempting to enable the A20 line
 	
-	call 	Enable_A20		; Attempt to enable the A20 line
+	call 	Enable_A20					; Attempt to enable the A20 line
 	
 	cmp		dx,	[failed_to_enable]		; If DX (stores method used to enable A20 line) is value stored in failed_to_enable then no method was successful
 	jne		A20_Success					; If DX is anything other than the value of failed_to_enable then a valid method was used to enable the A20 line
@@ -42,21 +42,21 @@ A20_Failed:
 	
 ; Called when the A20 line has been successfully enabled, and prints out which method was used to enable it
 A20_Success:
-	mov		si, a20_enabled_message			; Print out the message notifying us the A20 line has been successfully enabled
+	mov		si, a20_enabled_message		; Print out the message notifying us the A20 line has been successfully enabled
 	call	Console_WriteLine_16
 	
 	; Switch like behaviour to test for which method enabled the A20 line by checking value stored in DX
 	
-	cmp		dx, [bios_function]				; BIOS function used to enable A20 line
+	cmp		dx, [bios_function]			; BIOS function used to enable A20 line
 	je		A20_BIOS
 	
-	cmp		dx,	[kbd_controller]			; Keyboard controller used to enable A20 line
+	cmp		dx,	[kbd_controller]		; Keyboard controller used to enable A20 line
 	je		A20_KBD
 	
-	cmp		dx,	[fast_gate_method]			; Fast Gate method used to enable A20 line
+	cmp		dx,	[fast_gate_method]		; Fast Gate method used to enable A20 line
 	je		A20_GATE
 	
-	jmp		A20_Done						; If DX is not 2, 3, or 4 then it was already enabled by default
+	jmp		A20_Done					; If DX is not 2, 3, or 4 then it was already enabled by default
 	
 ; Called if the A20 line is enabled through the BIOS function
 A20_BIOS:
@@ -78,7 +78,6 @@ A20_GATE:
 
 ; Halt the boot process once the A20 line has been checked and enabled
 A20_Done:
-
 	hlt
 
 	

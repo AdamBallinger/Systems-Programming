@@ -36,7 +36,7 @@ Test_A20_Enabled:
     mov	    ax, 0
     je 		Test_A20_Exit			; Return 0 if the line is NOT enabled. 
  
-    mov 	ax, 1					; otherwise return 1.
+    mov 	ax, 1				; otherwise return 1.
  
 Test_A20_Exit:
     pop 	si
@@ -145,5 +145,4 @@ failed_to_enable:	db		0
 already_enabled:	db		1
 bios_function:		db		2
 kbd_controller:		db		3
-fast_gate_method:	db		4
-	
+fast_gate_method:	db		4	
