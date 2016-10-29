@@ -91,5 +91,5 @@ void main(BootInfo * bootInfo)
 {
 	_bootInfo = bootInfo;
 	Initialise();
-	while (1);
+	//while (1);
 }
