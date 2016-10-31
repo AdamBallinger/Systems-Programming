@@ -109,7 +109,8 @@ void PrintBlockUsage()
 void PrintMemoryMap(BootInfo* bootInfo)
 {
 	ConsoleSetColour(0x1B);
-	ConsoleWriteString("\nPhysical Memory Map:");	
+	ConsoleWriteString("\nPhysical Memory Map: Address: 0x");
+	ConsoleWriteInt(PMM_GetMemoryMap(), HEX);
 	for(int i = 0; i < bootInfo->MemoryRegions; i++)
 	{
 		MemoryRegion region = bootInfo->MemoryRegions[i];
