@@ -28,7 +28,7 @@ uint32_t PMM_Initialise(BootInfo* bootInfo, uint32_t bitmap)
 	pmm_used_blocks = pmm_max_blocks;
 	pmm_mem_map_size = pmm_max_blocks;
 
-	memset(pmm_mem_map, 1, pmm_mem_map_size);
+	memset(pmm_mem_map, MEMORY_REGION_AVAILABLE, pmm_mem_map_size);
 	
 	for(size_t i = 0; i < bootInfo->MemoryRegions; i++)
 	{
@@ -77,7 +77,7 @@ uint32_t PMM_GetFirstFreeBlock()
 {
 	for(uint32_t i = 0; i < PMM_GetAvailableBlockCount() / BITS; i++)
 	{
-		if(pmm_mem_map[i] != 0xffffffff)
+		if(pmm_mem_map[i] != MEMORY_REGION_AVAILABLE)
 		{
 			for(int j = 0; j < BITS; j++)
 			{
@@ -107,7 +107,7 @@ uint32_t PMM_GetFirstFreeBlocks(size_t size)
 		
 	for(uint32_t i = 0; i < pmm_mem_map_size; i++)
 	{
-		if(pmm_mem_map[i] != 0xffffffff)
+		if(pmm_mem_map[i] != MEMORY_REGION_AVAILABLE)
 		{
 			for(int j = 0; j < BITS; j++)
 			{
@@ -144,10 +144,16 @@ uint32_t PMM_GetFirstFreeBlocks(size_t size)
 //size: Size of the region of memory (in bytes).
 void PMM_MarkRegionAsAvailable(uint32_t base, size_t size)
 {
+	// Ignore if we try to mark a region of 0 bytes.
+	if(size == 0)
+	{
+		return;
+	}
+	
 	uint32_t align = base / PMM_GetBlockSize();
 	uint32_t blocks = size / PMM_GetBlockSize();
 	
-	// If the size is less than the size of a block then add 1 to make sure a block is used.
+	// Make sure at least 1 block is used if size is less than block size.
 	if(blocks == 0) blocks++;
 	
 	for(; blocks > 0; blocks--)
@@ -161,10 +167,16 @@ void PMM_MarkRegionAsAvailable(uint32_t base, size_t size)
 //size: Size of the region of memory (in bytes).
 void PMM_MarkRegionAsUnavailable(uint32_t base, size_t size)
 {
+	// Ignore if we try to mark a region of 0 bytes.
+	if(size == 0)
+	{
+		return;
+	}
+	
 	uint32_t align = base / PMM_GetBlockSize();
 	uint32_t blocks = size / PMM_GetBlockSize();
 	
-	// If the size is less than the size of a block then add 1 to make sure a block is used.
+	// Make sure at least 1 block is used if size is less than block size.
 	if(blocks == 0) blocks++;
 	
 	for(; blocks > 0; blocks--)
@@ -285,8 +297,11 @@ void PMM_FreeBlocks(void* p, size_t size)
 // Returns the total amount of memory available (In K).
 size_t PMM_GetAvailableMemorySize()
 {
-	// Because block size is in bytes, divide by 1024 to turn value into KB.
-	return PMM_GetAvailableBlockCount() * PMM_GetBlockSize() / 1024;
+	uint32_t bytesInBlocks = PMM_GetAvailableBlockCount() * PMM_GetBlockSize();
+	uint32_t bytesInMemMap = pmm_mem_map_size;
+	
+	// Take away memory used by the memory map from available memory.
+	return (bytesInBlocks - bytesInMemMap) / 1024;
 }
 
 // Returns the total number of blocks available (Both used and unused).

@@ -11,6 +11,14 @@
 
 BootInfo *	_bootInfo;
 
+char* memoryTypes[] = 
+{
+	{"Available"},
+	{"Reserved"},
+	{"ACPI Reclaim"},
+	{"ACPI NVS"}
+};
+
 // This is a dummy __main.  For some reason, gcc puts in a call to 
 // __main from main, so we just include a dummy.
  
@@ -110,29 +118,12 @@ void PrintMemoryMap(BootInfo* bootInfo)
 		
 		ConsoleWriteString("\nRegion: ");
 		ConsoleWriteInt(i, 10);
-		ConsoleWriteString(" Start: ");
+		ConsoleWriteString(" Start: 0x");
 		ConsoleWriteInt(region.StartOfRegionLow, HEX);
-		ConsoleWriteString(" Length: ");
+		ConsoleWriteString(" Length: 0x");
 		ConsoleWriteInt(region.SizeOfRegionLow, HEX);
 		ConsoleWriteString(" bytes Type: ");
-		switch(region.Type)
-		{
-			case 1:
-				ConsoleWriteString("Available");
-				break;
-			
-			case 2:
-				ConsoleWriteString("Reserved");
-				break;
-			
-			case 3:
-				ConsoleWriteString("ACPI Reclaim");
-				break;
-			
-			case 4:
-				ConsoleWriteString("ACPI NVS");
-				break;
-		}
+		ConsoleWriteString(memoryTypes[region.Type - 1]);
 	}
 	
 	ConsoleWriteString("\nTotal Available Memory: ");
@@ -143,26 +134,26 @@ void PrintMemoryMap(BootInfo* bootInfo)
 void Tests()
 {
 	uint32_t* block1 = PMM_AllocateBlock();
-	ConsoleWriteString("\nAllocated 1 block to address: ");
+	ConsoleWriteString("\nAllocated 1 block to address: 0x");
 	ConsoleWriteInt(block1, HEX);
 	
-	uint32_t* blocks = PMM_AllocateBlocks(10);
-	ConsoleWriteString("\nAllocated 10 blocks to address: ");
+	uint32_t* blocks = PMM_AllocateBlocks(50);
+	ConsoleWriteString("\nAllocated 50 blocks to address: 0x");
 	ConsoleWriteInt(blocks, HEX);
 	
 	uint32_t* block2 = PMM_AllocateBlock();
-	ConsoleWriteString("\nAllocated 1 block to address: ");
+	ConsoleWriteString("\nAllocated 1 block to address: 0x");
 	ConsoleWriteInt(block2, HEX);
 	
 	PMM_FreeBlock(block1);
-	ConsoleWriteString("\nUnallocated 1 block at address: ");
+	ConsoleWriteString("\nUnallocated 1 block at address: 0x");
 	ConsoleWriteInt(block1, HEX);
 	
-	block1 = PMM_AllocateBlock();
-	ConsoleWriteString("\nAllocated 1 block to address: ");
-	ConsoleWriteInt(block1, HEX);
-	ConsoleWriteString("\n");
-	
+	uint32_t* block3 = PMM_AllocateBlock();
+	ConsoleWriteString("\nAllocated 1 block to address: 0x");
+	ConsoleWriteInt(block3, HEX);
+
+	ConsoleWriteString("\n");	
 	PrintBlockUsage();
 }
 
