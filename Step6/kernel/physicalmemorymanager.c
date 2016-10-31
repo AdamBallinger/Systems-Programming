@@ -14,7 +14,7 @@ uint32_t pmm_used_blocks = 0;
 // Returns the size of the bitmap.
 uint32_t PMM_Initialise(BootInfo* bootInfo, uint32_t bitmap)
 {
-	pmm_mem_map = bitmap;
+	pmm_mem_map = (uint32_t*)bitmap;
 	
 	for(size_t i = 0; i < bootInfo->MemoryRegions; i++)
 	{
@@ -37,8 +37,8 @@ uint32_t PMM_Initialise(BootInfo* bootInfo, uint32_t bitmap)
 		// For every region that is marked as available, free each block.
 		if(bootInfo->MemoryRegions[i].Type == MEMORY_REGION_AVAILABLE)
 		{
-			PMM_FreeBlocks(bootInfo->MemoryRegions[i].StartOfRegionLow, 
-			bootInfo->MemoryRegions[i].SizeOfRegionLow / PMM_GetBlockSize());
+			MemoryRegion region = bootInfo->MemoryRegions[i];
+			PMM_FreeBlocks(region.StartOfRegionLow, region.SizeOfRegionLow / PMM_GetBlockSize());
 			
 			// Decrement used blocks manually as FreeBlocks only decrements if the bit is actually set in the bitmap.
 			pmm_used_blocks -= bootInfo->MemoryRegions[i].SizeOfRegionLow / PMM_GetBlockSize();
