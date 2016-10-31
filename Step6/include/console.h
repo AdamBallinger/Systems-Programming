@@ -2,6 +2,9 @@
 #define _CONSOLE_H
 #include <stdint.h>
 
+#define DECIMAL 10
+#define HEX 16
+
 // Output the specified character the current cursor position.  
 // The attribute at that position remains unchanged.
 

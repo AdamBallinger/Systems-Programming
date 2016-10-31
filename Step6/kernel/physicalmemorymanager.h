@@ -5,7 +5,18 @@
 
 #include <size_t.h>
 #include <stdint.h>
+#include <console.h>
+#include <string.h>
 #include "bootinfo.h"
+
+#define BITS 32 // 32 bit OS
+
+void PMM_SetBit(uint32_t bit);
+int PMM_ClearBit(uint32_t bit);
+bool PMM_TestBit(uint32_t bit);
+
+uint32_t PMM_GetFirstFreeBlock();
+uint32_t PMM_GetFirstFreeBlocks(size_t size);
 
 // Initialise the physical memory manager
 

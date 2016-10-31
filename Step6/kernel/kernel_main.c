@@ -1,6 +1,5 @@
 #include <string.h>
 #include <hal.h>
-#include <console.h>
 #include "exception.h"
 #include "physicalmemorymanager.h"
 #include "bootinfo.h"
@@ -77,19 +76,107 @@ void Initialise()
 {
 	ConsoleClearScreen(0x1F);
 	ConsoleWriteString("UODOS 32-bit Kernel. Kernel size is ");
-	ConsoleWriteInt(_bootInfo->KernelSize, 10);
+	ConsoleWriteInt(_bootInfo->KernelSize, DECIMAL);
 	ConsoleWriteString(" bytes\n");
 	HAL_Initialise();
 	InitialiseInterrupts();
 #ifdef PMM	
 	InitialisePhysicalMemory();
 #endif
-	ConsoleWriteString("Donerino");
+}
+
+void PrintBlockUsage()
+{
+	ConsoleSetColour(0x1A);
+	ConsoleWriteString("\nAvailable Blocks: ");
+	ConsoleWriteInt(PMM_GetAvailableBlockCount(), DECIMAL);
+	ConsoleWriteString("\nUsed Blocks: ");
+	ConsoleWriteInt(PMM_GetUsedBlockCount(), DECIMAL);
+	ConsoleWriteString("\nFree Blocks: ");
+	ConsoleWriteInt(PMM_GetFreeBlockCount(), DECIMAL);
+	ConsoleWriteString("\n");
+	ConsoleSetColour(0x1F);
+}
+
+void PrintMemoryMap(BootInfo* bootInfo)
+{
+	ConsoleSetColour(0x1B);
+	ConsoleWriteString("\nPhysical Memory Map:");	
+	for(int i = 0; i < bootInfo->MemoryRegions; i++)
+	{
+		MemoryRegion region = bootInfo->MemoryRegions[i];
+		// Out of memory check
+		if(i > 0 && region.StartOfRegionLow <= 0) break;
+		
+		ConsoleWriteString("\nRegion: ");
+		ConsoleWriteInt(i, 10);
+		ConsoleWriteString(" Start: ");
+		ConsoleWriteInt(region.StartOfRegionLow, HEX);
+		ConsoleWriteString(" Length: ");
+		ConsoleWriteInt(region.SizeOfRegionLow, HEX);
+		ConsoleWriteString(" bytes Type: ");
+		switch(region.Type)
+		{
+			case 1:
+				ConsoleWriteString("Available");
+				break;
+			
+			case 2:
+				ConsoleWriteString("Reserved");
+				break;
+			
+			case 3:
+				ConsoleWriteString("ACPI Reclaim");
+				break;
+			
+			case 4:
+				ConsoleWriteString("ACPI NVS");
+				break;
+		}
+	}
+	
+	ConsoleWriteString("\nTotal Available Memory: ");
+	ConsoleWriteInt(PMM_GetAvailableMemorySize(), DECIMAL);
+	ConsoleWriteString(" KB\n");
+}
+
+void Tests()
+{
+	uint32_t* block1 = PMM_AllocateBlock();
+	ConsoleWriteString("\nAllocated 1 block to address: ");
+	ConsoleWriteInt(block1, HEX);
+	
+	uint32_t* blocks = PMM_AllocateBlocks(10);
+	ConsoleWriteString("\nAllocated 10 blocks to address: ");
+	ConsoleWriteInt(blocks, HEX);
+	
+	uint32_t* block2 = PMM_AllocateBlock();
+	ConsoleWriteString("\nAllocated 1 block to address: ");
+	ConsoleWriteInt(block2, HEX);
+	
+	PMM_FreeBlock(block1);
+	ConsoleWriteString("\nUnallocated 1 block at address: ");
+	ConsoleWriteInt(block1, HEX);
+	
+	block1 = PMM_AllocateBlock();
+	ConsoleWriteString("\nAllocated 1 block to address: ");
+	ConsoleWriteInt(block1, HEX);
+	ConsoleWriteString("\n");
+	
+	PrintBlockUsage();
 }
 
 void main(BootInfo * bootInfo) 
 {
 	_bootInfo = bootInfo;
 	Initialise();
-	//while (1);
+	
+	PrintMemoryMap(bootInfo);
+	PrintBlockUsage();
+	Tests();
+	
+	while (true)
+	{
+		
+	}
 }
