@@ -26,9 +26,9 @@ uint32_t PMM_Initialise(BootInfo* bootInfo, uint32_t bitmap)
 	}
 	
 	pmm_used_blocks = pmm_max_blocks;
-	pmm_mem_map_size = pmm_max_blocks;
-
-	memset(pmm_mem_map, MEMORY_REGION_AVAILABLE, pmm_mem_map_size);
+	pmm_mem_map_size = bootInfo->MemoryRegions->SizeOfRegionLow + bootInfo->MemoryRegions->SizeOfRegionHigh;
+	
+	memset(pmm_mem_map, 0xff, pmm_max_blocks / 8);
 	
 	for(size_t i = 0; i < bootInfo->MemoryRegions; i++)
 	{
@@ -41,7 +41,7 @@ uint32_t PMM_Initialise(BootInfo* bootInfo, uint32_t bitmap)
 			PMM_FreeBlocks(region.StartOfRegionLow, region.SizeOfRegionLow / PMM_GetBlockSize());
 			
 			// Decrement used blocks manually as FreeBlocks only decrements if the bit is actually set in the bitmap.
-			pmm_used_blocks -= bootInfo->MemoryRegions[i].SizeOfRegionLow / PMM_GetBlockSize();
+			//pmm_used_blocks -= bootInfo->MemoryRegions[i].SizeOfRegionLow / PMM_GetBlockSize();
 		}
 	}
 	
@@ -71,28 +71,6 @@ bool PMM_TestBit(uint32_t bit)
 	return pmm_mem_map[bit / BITS] & (1 << (bit % BITS));
 }
 
-// Get the first available block in the bitmap.
-// Returns the position of the block in the bitmap.
-uint32_t PMM_GetFirstFreeBlock()
-{
-	for(uint32_t i = 0; i < PMM_GetAvailableBlockCount() / BITS; i++)
-	{
-		if(pmm_mem_map[i] != MEMORY_REGION_AVAILABLE)
-		{
-			for(int j = 0; j < BITS; j++)
-			{
-				int bit = 1 << j;
-				if(!(pmm_mem_map[i] & bit))
-				{
-					return i * 4 * 8 + j;
-				}
-			}
-		}
-	}
-	
-	return -1;
-}
-
 // Gets the first available block with enough following space equal to given size.
 // Returns the position of the start block in the bitmap.
 uint32_t PMM_GetFirstFreeBlocks(size_t size)
@@ -101,13 +79,9 @@ uint32_t PMM_GetFirstFreeBlocks(size_t size)
 	if(size == 0)
 		return -1;
 		
-	// If we try to allocate just 1 block use the other function.
-	if(size == 1)
-		return PMM_GetFirstFreeBlock();
-		
 	for(uint32_t i = 0; i < pmm_mem_map_size; i++)
 	{
-		if(pmm_mem_map[i] != MEMORY_REGION_AVAILABLE)
+		if(pmm_mem_map[i] != 0xffffffff)
 		{
 			for(int j = 0; j < BITS; j++)
 			{
@@ -129,7 +103,7 @@ uint32_t PMM_GetFirstFreeBlocks(size_t size)
 						// Check if we have found enough empty bits to allocate too.
 						if(free == size)
 						{
-							return i * 4 * 8 + j;
+							return (i * BITS) + j;
 						}
 					}
 				}
@@ -184,6 +158,8 @@ void PMM_MarkRegionAsUnavailable(uint32_t base, size_t size)
 		PMM_SetBit(align++);
 		pmm_used_blocks++;
 	}
+	
+	PMM_SetBit(0);
 }
 
 // Returns a pointer to the block of memory that has been allocated.
@@ -193,14 +169,16 @@ void* PMM_AllocateBlock()
 	if(PMM_GetFreeBlockCount() <= 0)
 	{
 		// No blocks available for allocation.
+		ConsoleWriteString("\nFailed to allocate a block as no free blocks are available.");
 		return 0;
 	}
 	
 	// Get the first available free blocks bit in the bitmap. (First fit).
-	uint32_t freeBlock = PMM_GetFirstFreeBlock();
+	uint32_t freeBlock = PMM_GetFirstFreeBlocks(1);
 	
 	if(freeBlock == -1)
 	{
+		ConsoleWriteString("\nFailed to allocate 1 block. No memory was available.");
 		// No free blocks available (Out of memory).
 		return 0;
 	}
@@ -211,6 +189,9 @@ void* PMM_AllocateBlock()
 	
 	// Convert from bitmap bit to physical address for the block.
 	uint32_t address = freeBlock * PMM_GetBlockSize();
+	
+	ConsoleWriteString("\nAllocated 1 block to address: 0x");
+	ConsoleWriteInt(address, HEX);
 	
 	return (void*)address;
 }
@@ -223,6 +204,9 @@ void* PMM_AllocateBlocks(size_t size)
 	if(PMM_GetFreeBlockCount() < size)
 	{
 		// Not enough free blocks available to allocate.
+		ConsoleWriteString("\nFailed to allocate ");
+		ConsoleWriteInt(size, DECIMAL);
+		ConsoleWriteString(" blocks. Not enough free blocks available.");
 		return 0;
 	}
 	
@@ -232,6 +216,9 @@ void* PMM_AllocateBlocks(size_t size)
 	if(startBlock == -1)
 	{
 		// Not enough free blocks available to allocate specified size.
+		ConsoleWriteString("\nFailed to allocate ");
+		ConsoleWriteInt(size, DECIMAL);
+		ConsoleWriteString(" blocks. Not enough continuous free blocks available.");
 		return 0;
 	}
 	
@@ -246,6 +233,11 @@ void* PMM_AllocateBlocks(size_t size)
 	
 	// Add to the number of used blocks.
 	pmm_used_blocks += size;
+	
+	ConsoleWriteString("\nAllocated ");
+	ConsoleWriteInt(size, DECIMAL);
+	ConsoleWriteString(" blocks to address: 0x");
+	ConsoleWriteInt(startAddress, HEX);
 	
 	// Return the address of the first block allocated.
 	return (void*) startAddress;
@@ -267,6 +259,8 @@ void PMM_FreeBlock(void* p)
 		{
 			// Decrement used blocks only if the bit was already set.
 			pmm_used_blocks--;
+			ConsoleWriteString("\nUnallocated 1 block at address: ");
+			ConsoleWriteInt(address, HEX);
 		}
 	}	
 }
@@ -277,6 +271,8 @@ void PMM_FreeBlocks(void* p, size_t size)
 {
 	if(p)
 	{
+		uint32_t blocksUnallocated = 0;
+		
 		// Cast pointer to physical address.
 		uint32_t address = (uint32_t)p;
 		
@@ -289,8 +285,14 @@ void PMM_FreeBlocks(void* p, size_t size)
 			if(PMM_ClearBit(bit) == 1)
 			{
 				pmm_used_blocks--;
+				blocksUnallocated++;
 			}
 		}
+		
+		ConsoleWriteString("\nUnallocated ");
+		ConsoleWriteInt(blocksUnallocated, DECIMAL);
+		ConsoleWriteString(" blocks at address: ");
+		ConsoleWriteInt(address, HEX);
 	}
 }
 
@@ -298,10 +300,7 @@ void PMM_FreeBlocks(void* p, size_t size)
 size_t PMM_GetAvailableMemorySize()
 {
 	uint32_t bytesInBlocks = PMM_GetAvailableBlockCount() * PMM_GetBlockSize();
-	uint32_t bytesInMemMap = pmm_mem_map_size;
-	
-	// Take away memory used by the memory map from available memory.
-	return (bytesInBlocks - bytesInMemMap) / 1024;
+	return bytesInBlocks / 1024;
 }
 
 // Returns the total number of blocks available (Both used and unused).
