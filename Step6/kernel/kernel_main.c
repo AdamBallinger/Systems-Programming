@@ -137,16 +137,25 @@ void PrintMemoryMap(BootInfo* bootInfo)
 
 void Tests()
 {
+	// Allocate a single block
 	uint32_t* block1 = PMM_AllocateBlock();
-	uint32_t* blocks = PMM_AllocateBlocks(5);
-	uint32_t* block2 = PMM_AllocateBlocks(2);	
-	PMM_FreeBlock(block1);	
+	
+	// Allocate a cluster of 100 blocks.
+	uint32_t* blocks = PMM_AllocateBlocks(100);
+	
+	uint32_t* block2 = PMM_AllocateBlock();
+	
+	uint32_t* blocks2 = PMM_AllocateBlocks(500);
+	
+	// Test freeing the first block.
+	PMM_FreeBlock(block1);
+	
+	// Test allocating another single block allocates it to the old address of block1
 	uint32_t* block3 = PMM_AllocateBlock();
 	
-	for(int i = 0; i < 2; i++)
-	{
-		PMM_AllocateBlock();
-	}
+	// Test freeing a cluster of 100 blocks.
+	PMM_FreeBlocks(blocks, 100);
+	
 
 	ConsoleWriteString("\n");	
 	PrintBlockUsage();
@@ -160,8 +169,6 @@ void main(BootInfo * bootInfo)
 	PrintMemoryMap(bootInfo);
 	PrintBlockUsage();
 	Tests();
-	ConsoleWriteString("\n");
-	ConsoleWriteInt(sizeof(uint32_t), DECIMAL);
 	while (true)
 	{
 		

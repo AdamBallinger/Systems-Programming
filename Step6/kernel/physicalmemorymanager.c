@@ -9,7 +9,7 @@ uint32_t pmm_max_blocks = 0;
 // Store the used block count.
 uint32_t pmm_used_blocks = 0;
 
-// How many blocks per each byte of the memory map.
+// How many blocks per each byte of the memory map. (1 block per bit)
 uint32_t BLOCKS_PER_BYTE = 8;
 
 //bootInfo: Passed from kernel containing information from boot loader.
@@ -111,7 +111,7 @@ uint32_t PMM_GetFirstFreeBlocks(size_t size)
 		
 	for(uint32_t i = 0; i < pmm_max_blocks / BITS; i++)
 	{
-		if(pmm_mem_map[i] != 0xFFFFFFFF) // Check if all bits are set
+		if(pmm_mem_map[i] != 0xFFFFFFFF) // Check that all bits are not set.
 		{
 			for(int j = 0; j < BITS; j++) // Go through each bit in this bitmap index.
 			{	
@@ -135,31 +135,10 @@ uint32_t PMM_GetFirstFreeBlocks(size_t size)
 					{
 						// If a bit was set before continuousBit was the same as size, then a bit was blocking.
 						// Add continuousBit to j since we know the space from j to j + continuousBit is blocked.
-						//j += continuousBit;
+						j += continuousBit;
 						break;
 					}
 				}
-				
-				//if(!(pmm_mem_map[i] & bit)) // Is this bit set?
-				//{
-				//	int startBit = bit;
-			    //
-				//	int free = 0;
-				//	for(uint32_t count = 0; count < size; count++)
-				//	{
-				//		// Test if the bit is set.
-				//		if(PMM_TestBit(startBit << 1 + count) == 0)
-				//		{
-				//			free++;
-				//		}
-				//
-				//		// Check if we have found enough empty bits to allocate too.
-				//		if(free == size)
-				//		{
-				//			return (i * BITS) + j;
-				//		}
-				//	}
-				//}
 			}
 		}
 	}
@@ -322,11 +301,6 @@ void PMM_FreeBlock(void* p)
 // Size: Number of blocks to free.
 void PMM_FreeBlocks(void* p, size_t size)
 {
-	ConsoleWriteString("\nAttempting to free ");
-	ConsoleWriteInt(size, DECIMAL);
-	ConsoleWriteString(" blocks at address: 0x");
-	ConsoleWriteInt(p, HEX);
-	
 	uint32_t blocksUnallocated = 0;
 	
 	// Cast pointer to physical address.
