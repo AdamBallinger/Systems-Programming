@@ -98,9 +98,9 @@ void PrintBlockUsage()
 	ConsoleSetColour(0x1A);
 	ConsoleWriteString("\nAvailable Blocks: ");
 	ConsoleWriteInt(PMM_GetAvailableBlockCount(), DECIMAL);
-	ConsoleWriteString("\nUsed Blocks: ");
+	ConsoleWriteString("    Used Blocks: ");
 	ConsoleWriteInt(PMM_GetUsedBlockCount(), DECIMAL);
-	ConsoleWriteString("\nFree Blocks: ");
+	ConsoleWriteString("    Free Blocks: ");
 	ConsoleWriteInt(PMM_GetFreeBlockCount(), DECIMAL);
 	ConsoleWriteString("\n");
 	ConsoleSetColour(0x1F);
@@ -111,6 +111,7 @@ void PrintMemoryMap(BootInfo* bootInfo)
 	ConsoleSetColour(0x1B);
 	ConsoleWriteString("\nPhysical Memory Map: Address: 0x");
 	ConsoleWriteInt(PMM_GetMemoryMap(), HEX);
+	
 	for(int i = 0; i < bootInfo->MemoryRegions; i++)
 	{
 		MemoryRegion region = bootInfo->MemoryRegions[i];
@@ -125,6 +126,8 @@ void PrintMemoryMap(BootInfo* bootInfo)
 		ConsoleWriteInt(region.SizeOfRegionLow, HEX);
 		ConsoleWriteString(" bytes Type: ");
 		ConsoleWriteString(memoryTypes[region.Type - 1]);
+		ConsoleWriteString("  Blocks: ");
+		ConsoleWriteInt(region.SizeOfRegionLow / PMM_GetBlockSize(), DECIMAL);
 	}
 	
 	ConsoleWriteString("\nTotal Available Memory: ");
@@ -135,10 +138,15 @@ void PrintMemoryMap(BootInfo* bootInfo)
 void Tests()
 {
 	uint32_t* block1 = PMM_AllocateBlock();
-	uint32_t* blocks = PMM_AllocateBlocks(10);
-	uint32_t* block2 = PMM_AllocateBlock();	
+	uint32_t* blocks = PMM_AllocateBlocks(5);
+	uint32_t* block2 = PMM_AllocateBlocks(2);	
 	PMM_FreeBlock(block1);	
 	uint32_t* block3 = PMM_AllocateBlock();
+	
+	for(int i = 0; i < 2; i++)
+	{
+		PMM_AllocateBlock();
+	}
 
 	ConsoleWriteString("\n");	
 	PrintBlockUsage();

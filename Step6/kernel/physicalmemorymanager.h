@@ -13,7 +13,7 @@
 
 void PMM_SetBit(uint32_t bit);
 int PMM_ClearBit(uint32_t bit);
-bool PMM_TestBit(uint32_t bit);
+int PMM_TestBit(uint32_t bit);
 
 uint32_t PMM_GetFirstFreeBlock();
 uint32_t PMM_GetFirstFreeBlocks(size_t size);

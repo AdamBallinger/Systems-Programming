@@ -46,3 +46,5 @@ clean:
 	rm -f $(IMAGE).iso
 	rm -rf cdiso
 	
+remake: clean $(IMAGE).iso
+	
