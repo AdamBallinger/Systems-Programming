@@ -156,7 +156,6 @@ void Tests()
 	// Test freeing a cluster of 100 blocks.
 	PMM_FreeBlocks(blocks, 100);
 	
-
 	ConsoleWriteString("\n");	
 	PrintBlockUsage();
 }
