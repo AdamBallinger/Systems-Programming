@@ -30,10 +30,12 @@ uint32_t PMM_Initialise(BootInfo* bootInfo, uint32_t bitmap)
 	
 	pmm_used_blocks = pmm_max_blocks;
 	
-	pmm_mem_map_size = pmm_max_blocks / BITS;
+	// Set the size of the bitmap in bytes
+	pmm_mem_map_size = pmm_max_blocks / BLOCKS_PER_BYTE;
 	
-	// Set all memory as used.
-	pmm_mem_map = memset(pmm_mem_map, 0xFF, pmm_max_blocks / BLOCKS_PER_BYTE);
+	// Set all memory as used. memset works in bytes which is why we divide total blocks 
+	// by BLOCKS_PER_BYTE (8).
+	pmm_mem_map = memset(pmm_mem_map, 0xFF, pmm_mem_map_size);
 	
 	for(size_t i = 0; i < bootInfo->MemoryRegions; i++)
 	{
@@ -59,12 +61,15 @@ void PMM_SetBit(uint32_t bit)
 }
 
 // Clears the bit in bitmap (Usable)
-int PMM_ClearBit(uint32_t bit)
+uint32_t PMM_ClearBit(uint32_t bit)
 {
 	// Test if the bit is actually set.
 	if(PMM_TestBit(bit) == 1)
 	{
-		pmm_mem_map[bit / BITS] &= ~(1 << (bit % BITS));
+		uint32_t mapIndex = bit / BITS;
+		uint32_t indexBit = bit % BITS;
+		uint32_t bitFlipped = ~(1 << indexBit);
+		pmm_mem_map[mapIndex] &= bitFlipped;
 		return 1;
 	}
 	
@@ -73,9 +78,27 @@ int PMM_ClearBit(uint32_t bit)
 }
 
 // Tests if a bit in the bitmap is set
-int PMM_TestBit(uint32_t bit)
+uint32_t PMM_TestBit(uint32_t bit)
 {
-	return pmm_mem_map[bit / BITS] & (1 << (bit % BITS));
+	// Get the position in the bitmap this bit is at.
+	uint32_t bitmapPosition = bit / BITS;
+
+	// For bitmapPosition get the bit for that index in the bitmap.
+	// For example:
+	// bit = 36
+	// bitmapPosition = 36 / 32 = 1
+	// bitIndex = 36 % 32 = 4
+	// Translates to getting the 4th bit in the value of pmm_mem_map[1]
+	uint32_t bitIndex = bit % BITS;
+	
+	// Bitwise AND the bit to check if its enabled.
+	uint32_t result = pmm_mem_map[bitmapPosition] & (1 << (bitIndex));
+
+	// Shift right to move the bit back to the start to see if it is on or not.
+	// For example:
+	// 00000100   <- this is bit shifted left 2 places
+	// 00000001   <- Shift it back to check if True/False
+	return result >> bitIndex;
 }
 
 // Gets the first available block with enough following space equal to given size.

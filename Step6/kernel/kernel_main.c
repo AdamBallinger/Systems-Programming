@@ -160,7 +160,8 @@ void main(BootInfo * bootInfo)
 	PrintMemoryMap(bootInfo);
 	PrintBlockUsage();
 	Tests();
-	
+	ConsoleWriteString("\n");
+	ConsoleWriteInt(sizeof(uint32_t), DECIMAL);
 	while (true)
 	{
 		
