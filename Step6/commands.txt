@@ -1,1 +1,5 @@
 xp /1022bt address
+
+
+~5000000 steps to kernel boot
+~6000000 steps to freeing region blocks

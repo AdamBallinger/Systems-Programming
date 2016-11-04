@@ -39,6 +39,7 @@ uint32_t PMM_Initialise(BootInfo* bootInfo, uint32_t bitmap)
 	
 	for(size_t i = 0; i < bootInfo->MemoryRegions; i++)
 	{
+		// Check there is memory still available.
 		if(i > 0 && bootInfo->MemoryRegions[i].StartOfRegionLow <= 0) break;
 		
 		// For every region that is marked as available, free each block.
@@ -46,7 +47,6 @@ uint32_t PMM_Initialise(BootInfo* bootInfo, uint32_t bitmap)
 		{
 			// Free memory marked as available.
 			MemoryRegion region = bootInfo->MemoryRegions[i];
-			//PMM_MarkRegionAsAvailable(region.StartOfRegionLow, region.SizeOfRegionLow);
 			PMM_FreeBlocks((void*)region.StartOfRegionLow, region.SizeOfRegionLow / PMM_GetBlockSize());
 		}
 	}
@@ -54,13 +54,21 @@ uint32_t PMM_Initialise(BootInfo* bootInfo, uint32_t bitmap)
 	return pmm_mem_map_size;
 }
 
-// Sets the bit in bitmap (Unusable)
-void PMM_SetBit(uint32_t bit)
+// Sets the bit in bitmap (Unusable) and returns if the bit value was changed.
+uint32_t PMM_SetBit(uint32_t bit)
 {
-	pmm_mem_map[bit / BITS] |= (1 << (bit % BITS));
+	// Check if the bit is clear.
+	if(PMM_TestBit(bit) == 0)
+	{
+		pmm_mem_map[bit / BITS] |= (1 << (bit % BITS));
+		return 1;
+	}
+	
+	// Bit already set.
+	return 0;
 }
 
-// Clears the bit in bitmap (Usable)
+// Clears the bit in bitmap (Usable) and returns if the bit value was changed.
 uint32_t PMM_ClearBit(uint32_t bit)
 {
 	// Test if the bit is actually set.
@@ -77,7 +85,7 @@ uint32_t PMM_ClearBit(uint32_t bit)
 	return 0;
 }
 
-// Tests if a bit in the bitmap is set
+// Tests if a bit in the bitmap is set and returns the bit state (On/Off).
 uint32_t PMM_TestBit(uint32_t bit)
 {
 	// Get the position in the bitmap this bit is at.
@@ -128,8 +136,7 @@ uint32_t PMM_GetFirstFreeBlocks(size_t size)
 						if(continuousBit == size)
 						{
 							return (i * BITS) + j;
-						}
-						
+						}			
 					}
 					else
 					{
@@ -164,8 +171,11 @@ void PMM_MarkRegionAsAvailable(uint32_t base, size_t size)
 	
 	for(; blocks > 0; blocks--)
 	{
-		PMM_ClearBit(align++);
-		pmm_used_blocks--;
+		if(PMM_ClearBit(align++) == 1)
+		{
+			// Only decrement if a bit was actually cleared.
+			pmm_used_blocks--;
+		}		
 	}
 }
 
@@ -187,8 +197,11 @@ void PMM_MarkRegionAsUnavailable(uint32_t base, size_t size)
 	
 	for(; blocks > 0; blocks--)
 	{
-		PMM_SetBit(align++);
-		pmm_used_blocks++;
+		if(PMM_SetBit(align++) == 1)
+		{
+			// Only increment if a bit was actually set.
+			pmm_used_blocks++;
+		}		
 	}
 }
 
@@ -289,12 +302,11 @@ void PMM_FreeBlock(void* p)
 		pmm_used_blocks--;
 		ConsoleWriteString("\nUnallocated 1 block at address: 0x");
 		ConsoleWriteInt(address, HEX);
+		return;
 	}
-	else
-	{
-		ConsoleWriteString("\nThe bit was already clear when attempting to free: 0x");
-		ConsoleWriteInt(address, HEX);
-	}
+	
+	ConsoleWriteString("\nThe bit was already clear when attempting to free: 0x");
+	ConsoleWriteInt(address, HEX);
 }
 
 // P: Address of blocks.
