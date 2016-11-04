@@ -212,7 +212,9 @@ void* PMM_AllocateBlock()
 	if(PMM_GetFreeBlockCount() <= 0)
 	{
 		// No blocks available for allocation.
-		ConsoleWriteString("\nFailed to allocate a block as no free blocks are available.");
+		ConsoleWriteString("\nError code: ");
+		ConsoleWriteInt(ENOMEM, DECIMAL);
+		ConsoleWriteString(" - Failed to allocate a block as no free blocks are available.");
 		return 0;
 	}
 	

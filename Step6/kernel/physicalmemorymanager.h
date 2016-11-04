@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <console.h>
 #include <string.h>
+#include <errno.h>
 #include "bootinfo.h"
 
 #define BITS 32 // 32 bit OS
