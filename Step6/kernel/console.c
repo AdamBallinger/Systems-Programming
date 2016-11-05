@@ -21,35 +21,86 @@ char stringBuffer[40];
 char hexChars[] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
 
 // Write byte to device through port mapped io
-void  OutputByteToVideoController(unsigned short portid, unsigned char value) 
+void  OutputByteToVideoController(unsigned short portid, unsigned char value)
 {
 	asm volatile("movb	%1, %%al \n\t"
 				 "movw	%0, %%dx \n\t"
 				  "out	%%al, %%dx"
 				 : : "m" (portid), "m" (value));
-				 
+
+}
+
+// Returns colour for console display.
+uint8_t GetColour(uint8_t background, uint8_t foreground, bool flashText, bool forebright)
+{
+    uint8_t colour = 0x0;;
+
+    colour |= (background << 4);
+
+    if (flashText)
+        colour |= (1 << 7);
+
+    if (forebright)
+        colour |= (foreground + 0x8);
+    else
+        colour |= (foreground);
+
+    return colour;
+}
+
+// Write a given value as binary to console.
+void ConsoleWriteBinary(size_t val)
+{
+    ConsoleWriteCharacter('[');
+
+    int bitsDone = 0;
+
+    for(int64_t bit = (sizeof(val) * 8) - 1; bit >= 0; bit--)
+    {
+        int64_t bitVal = val >> bit;
+
+        if (bitsDone > 0 && bitsDone % 8 == 0)
+        {
+            ConsoleWriteCharacter(' ');
+            bitsDone = 0;
+        }
+
+        if(bitVal & 1)
+        {
+            ConsoleWriteString("1");
+        }
+        else
+        {
+            ConsoleWriteString("0");
+        }
+
+        bitsDone++;
+    }
+
+    ConsoleWriteCharacter(']');
+
+    ConsoleWriteCharacter('\n');
 }
 
 // Update hardware cursor position
 
-void UpdateCursorPosition(int x, int y) 
+void UpdateCursorPosition(int x, int y)
 {
     uint16_t cursorLocation = y * 80 + x;
 
 	// Send location to VGA controller to set cursor
 	// Send the high byte
 	OutputByteToVideoController(0x3D4, 14);
-	OutputByteToVideoController(0x3D5, cursorLocation >> 8); 
+	OutputByteToVideoController(0x3D5, cursorLocation >> 8);
 	// Send the low byte
 	OutputByteToVideoController(0x3D4, 15);
-	OutputByteToVideoController(0x3D5, cursorLocation);      
+	OutputByteToVideoController(0x3D5, cursorLocation);
 }
 
-void Scroll() 
+void Scroll()
 {
-	if (_cursorY >= CONSOLE_HEIGHT) 
+	if (_cursorY >= CONSOLE_HEIGHT)
 	{
-
 		uint16_t attribute = _colour << 8;
 
 		// Move current display up one line
@@ -68,7 +119,7 @@ void Scroll()
 }
 
 // Displays a character
-void ConsoleWriteCharacter(unsigned char c) 
+void ConsoleWriteCharacter(unsigned char c)
 {
     uint16_t attribute = _colour << 8;
 
@@ -87,13 +138,13 @@ void ConsoleWriteCharacter(unsigned char c)
 		// Carriage return
         _cursorX = 0;
 	}
-	else if (c == '\n') 
+	else if (c == '\n')
 	{
 		// New line
         _cursorX = 0;
         _cursorY++;
 	}
-    else if (c >= ' ') 
+    else if (c >= ' ')
 	{
 		// Printable characters
 
@@ -103,7 +154,7 @@ void ConsoleWriteCharacter(unsigned char c)
         _cursorX++;
     }
     // If we are at edge of row, go to new line
-    if (_cursorX >= CONSOLE_WIDTH) 
+    if (_cursorX >= CONSOLE_WIDTH)
 	{
         _cursorX = 0;
         _cursorY++;
@@ -118,17 +169,17 @@ void ConsoleWriteCharacter(unsigned char c)
 	UpdateCursorPosition (_cursorX,_cursorY);
 }
 
-void ConsoleWriteInt(unsigned int i, unsigned int base) 
+void ConsoleWriteInt(unsigned int i, unsigned int base)
 {
     int pos = 0;
-	
-    if (i == 0 || base > 16) 
+
+    if (i == 0 || base > 16)
     {
 		ConsoleWriteCharacter('0');
     }
 	else
 	{
-		while (i != 0) 
+		while (i != 0)
 		{
 			stringBuffer[pos] = hexChars[i % base];
 			pos++;
@@ -142,7 +193,7 @@ void ConsoleWriteInt(unsigned int i, unsigned int base)
 }
 
 // Sets new font colour and returns the old colour
-unsigned int ConsoleSetColour(const uint8_t c) 
+unsigned int ConsoleSetColour(const uint8_t c)
 {
 	unsigned int t = (unsigned int)_colour;
 	_colour = c;
@@ -150,7 +201,7 @@ unsigned int ConsoleSetColour(const uint8_t c)
 }
 
 // Set new cursor position
-void ConsoleGotoXY(unsigned int x, unsigned int y) 
+void ConsoleGotoXY(unsigned int x, unsigned int y)
 {
 	if (_cursorX <= CONSOLE_WIDTH - 1)
 	{
@@ -164,7 +215,7 @@ void ConsoleGotoXY(unsigned int x, unsigned int y)
 }
 
 // Returns cursor position
-void ConsoleGetXY(unsigned* x, unsigned* y) 
+void ConsoleGetXY(unsigned* x, unsigned* y)
 {
 	if (x == 0 || y == 0)
 	{
@@ -174,20 +225,20 @@ void ConsoleGetXY(unsigned* x, unsigned* y)
 	*y = _cursorY;
 }
 
-// Return horzontal width
-int ConsoleGetWidth() 
+// Return horizontal width
+int ConsoleGetWidth()
 {
 	return CONSOLE_WIDTH;
 }
 
 // Return vertical height
-int ConsoleGetHeight() 
+int ConsoleGetHeight()
 {
 	return CONSOLE_HEIGHT;
 }
 
 //! Clear screen
-void ConsoleClearScreen(const uint8_t c) 
+void ConsoleClearScreen(const uint8_t c)
 {
 	_colour = c;
 	uint16_t blank = ' ' | (c << 8);
@@ -200,7 +251,7 @@ void ConsoleClearScreen(const uint8_t c)
 
 // Display specified string
 
-void ConsoleWriteString(char* str) 
+void ConsoleWriteString(char* str)
 {
 	if (!str)
 	{

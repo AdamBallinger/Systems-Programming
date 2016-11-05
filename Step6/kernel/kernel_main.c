@@ -11,7 +11,7 @@
 
 BootInfo *	_bootInfo;
 
-char* memoryTypes[] = 
+char* memoryTypes[] =
 {
 	{"Available"},
 	{"Reserved"},
@@ -19,9 +19,9 @@ char* memoryTypes[] =
 	{"ACPI NVS"}
 };
 
-// This is a dummy __main.  For some reason, gcc puts in a call to 
+// This is a dummy __main.  For some reason, gcc puts in a call to
 // __main from main, so we just include a dummy.
- 
+
 void __main() {}
 
 void InitialiseInterrupts()
@@ -62,9 +62,9 @@ void InitialisePhysicalMemory()
 		memoryMapAddress = (memoryMapAddress / PMM_GetBlockSize() + 1) * PMM_GetBlockSize();
 	}
 	uint32_t sizeOfMemoryMap = PMM_Initialise(_bootInfo, memoryMapAddress);
-	
+
 	// We now need to mark various regions as unavailable
-	
+
 	// Mark first page as unavailable (so that a null pointer is invalid)
 	PMM_MarkRegionAsUnavailable(0x00, PMM_GetBlockSize());
 
@@ -88,7 +88,7 @@ void Initialise()
 	ConsoleWriteString(" bytes\n");
 	HAL_Initialise();
 	InitialiseInterrupts();
-#ifdef PMM	
+#ifdef PMM
 	InitialisePhysicalMemory();
 #endif
 }
@@ -108,16 +108,16 @@ void PrintBlockUsage()
 
 void PrintMemoryMap(BootInfo* bootInfo)
 {
-	ConsoleSetColour(col1 | GREEN); //0x1B
+	ConsoleSetColour(GetColour(GREEN, BLUE, true, false));
 	ConsoleWriteString("\n\nPhysical Memory Map: Address: 0x");
 	ConsoleWriteInt(PMM_GetMemoryMap(), HEX);
-	
+
 	for(int i = 0; i < bootInfo->MemoryRegions; i++)
 	{
 		MemoryRegion region = bootInfo->MemoryRegions[i];
 		// Out of memory check
 		if(i > 0 && region.StartOfRegionLow <= 0) break;
-		
+
 		ConsoleWriteString("\nRegion: ");
 		ConsoleWriteInt(i, 10);
 		ConsoleWriteString(" Start: 0x");
@@ -129,7 +129,7 @@ void PrintMemoryMap(BootInfo* bootInfo)
 		ConsoleWriteString("  Blocks: ");
 		ConsoleWriteInt(region.SizeOfRegionLow / PMM_GetBlockSize(), DECIMAL);
 	}
-	
+
 	ConsoleWriteString("\nTotal Available Memory: ");
 	ConsoleWriteInt(PMM_GetAvailableMemorySize(), DECIMAL);
 	ConsoleWriteString(" KB\n");
@@ -139,37 +139,37 @@ void Tests()
 {
 	// Allocate a single block
 	uint32_t* block1 = PMM_AllocateBlock();
-	
+
 	// Allocate a cluster of 100 blocks.
 	uint32_t* blocks = PMM_AllocateBlocks(100);
-	
+
 	uint32_t* block2 = PMM_AllocateBlock();
-	
+
 	uint32_t* blocks2 = PMM_AllocateBlocks(500);
-	
+
 	// Test freeing the first block.
 	PMM_FreeBlock(block1);
-	
+
 	// Test allocating another single block allocates it to the old address of block1
 	uint32_t* block3 = PMM_AllocateBlock();
-	
+
 	// Test freeing a cluster of 100 blocks.
 	PMM_FreeBlocks(blocks, 100);
-	
-	ConsoleWriteString("\n");	
+
+	ConsoleWriteString("\n");
 	PrintBlockUsage();
 }
 
-void main(BootInfo * bootInfo) 
+void main(BootInfo * bootInfo)
 {
 	_bootInfo = bootInfo;
 	Initialise();
-	
+
 	PrintMemoryMap(bootInfo);
 	PrintBlockUsage();
-	Tests();
+	//Tests();
 	while (true)
 	{
-		
+
 	}
 }
