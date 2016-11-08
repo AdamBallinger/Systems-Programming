@@ -33,8 +33,7 @@ uint32_t PMM_Initialise(BootInfo* bootInfo, uint32_t bitmap)
 	// Set the size of the bitmap in bytes
 	pmm_mem_map_size = pmm_max_blocks / BLOCKS_PER_BYTE;
 	
-	// Set all memory as used. memset works in bytes which is why we divide total blocks 
-	// by BLOCKS_PER_BYTE (8).
+	// Set all memory as used. memset sets bytes which is why pmm_mem_map_size is divided by 8
 	pmm_mem_map = memset(pmm_mem_map, 0xFF, pmm_mem_map_size);
 	
 	for(size_t i = 0; i < bootInfo->MemoryRegions; i++)
@@ -60,7 +59,10 @@ uint32_t PMM_SetBit(uint32_t bit)
 	// Check if the bit is clear.
 	if(PMM_TestBit(bit) == 0)
 	{
-		pmm_mem_map[bit / BITS] |= (1 << (bit % BITS));
+		uint32_t mapIndex = bit / BITS;
+		uint32_t indexBit = bit % BITS;
+		uint32_t shiftedBit = (1 << (indexBit))
+		pmm_mem_map[mapIndex] |= shiftedBit;
 		return 1;
 	}
 	
@@ -212,9 +214,7 @@ void* PMM_AllocateBlock()
 	if(PMM_GetFreeBlockCount() <= 0)
 	{
 		// No blocks available for allocation.
-		ConsoleWriteString("\nError code: ");
-		ConsoleWriteInt(ENOMEM, DECIMAL);
-		ConsoleWriteString(" - Failed to allocate a block as no free blocks are available.");
+		ConsoleWriteString("\nFailed to allocate a block as no free blocks are available.");
 		return 0;
 	}
 	

@@ -33,18 +33,37 @@ void  OutputByteToVideoController(unsigned short portid, unsigned char value)
 // Returns colour for console display.
 uint8_t GetColour(uint8_t background, uint8_t foreground, bool flashText, bool forebright)
 {
-    uint8_t colour = 0x0;;
+	//
+	//	Colour bits format:
+	//		
+	//		Bit 7 - ON: Sets text to flash  OFF: Sets background colour to brighter version.
+	//		Bits 6 to 4 - Control the background colour.
+	//		Bit 3 - ON: Sets foreground colour to bright.
+	//		Bits 2 to 0 - Control the foreground colour.
+	//
 
+    uint8_t colour = 0x0;
+
+	// Set the background colour.
     colour |= (background << 4);
 
+	// Set text to flash if flag is set.
     if (flashText)
-        colour |= (1 << 7);
+    {
+		// Set 7th bit to on
+		colour |= (1 << 7);
+	}
 
+	// If true then set the text colour to the brighter version.
     if (forebright)
-        colour |= (foreground + 0x8);
+	{
+		colour |= (foreground + 0x8);
+	}
     else
-        colour |= (foreground);
-
+	{
+		colour |= (foreground);
+	}
+        
     return colour;
 }
 
@@ -55,10 +74,12 @@ void ConsoleWriteBinary(size_t val)
 
     int bitsDone = 0;
 
+	// Display the state of each bit in the value (1 or 0)
     for(int64_t bit = (sizeof(val) * 8) - 1; bit >= 0; bit--)
     {
         int64_t bitVal = val >> bit;
 
+		// Place a space between each set of 8 bits
         if (bitsDone > 0 && bitsDone % 8 == 0)
         {
             ConsoleWriteCharacter(' ');
