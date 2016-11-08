@@ -108,7 +108,7 @@ void PrintBlockUsage()
 
 void PrintMemoryMap(BootInfo* bootInfo)
 {
-	ConsoleSetColour(GetColour(GREEN, BLUE, true, false));
+	ConsoleSetColour(GetColour(BLUE, CYAN, false, true));
 	ConsoleWriteString("\n\nPhysical Memory Map: Address: 0x");
 	ConsoleWriteInt(PMM_GetMemoryMap(), HEX);
 
@@ -167,7 +167,7 @@ void main(BootInfo * bootInfo)
 
 	PrintMemoryMap(bootInfo);
 	PrintBlockUsage();
-	//Tests();
+	Tests();
 	while (true)
 	{
 

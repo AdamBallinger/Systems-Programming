@@ -30,8 +30,8 @@ uint32_t PMM_Initialise(BootInfo* bootInfo, uint32_t bitmap)
 	
 	pmm_used_blocks = pmm_max_blocks;
 	
-	// Set the size of the bitmap in bytes
-	pmm_mem_map_size = pmm_max_blocks / BLOCKS_PER_BYTE;
+	// Set the size of the bitmap in bytes and make sure its a multiple of 4
+	pmm_mem_map_size = (pmm_max_blocks / BLOCKS_PER_BYTE) + (4 - (pmm_max_blocks / BLOCKS_PER_BYTE) % 4);
 	
 	// Set all memory as used. memset sets bytes which is why pmm_mem_map_size is divided by 8
 	pmm_mem_map = memset(pmm_mem_map, 0xFF, pmm_mem_map_size);
@@ -61,7 +61,7 @@ uint32_t PMM_SetBit(uint32_t bit)
 	{
 		uint32_t mapIndex = bit / BITS;
 		uint32_t indexBit = bit % BITS;
-		uint32_t shiftedBit = (1 << (indexBit))
+		uint32_t shiftedBit = (1 << (indexBit));
 		pmm_mem_map[mapIndex] |= shiftedBit;
 		return 1;
 	}
