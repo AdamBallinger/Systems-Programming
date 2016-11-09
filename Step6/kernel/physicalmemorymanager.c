@@ -302,7 +302,7 @@ void PMM_FreeBlock(void* p)
 	{
 		// Decrement used blocks only if the bit was already set.
 		pmm_used_blocks--;
-		ConsoleWriteString("\nUnallocated 1 block at address: 0x");
+		ConsoleWriteString("\nDeallocated 1 block at address: 0x");
 		ConsoleWriteInt(address, HEX);
 		return;
 	}
@@ -333,7 +333,7 @@ void PMM_FreeBlocks(void* p, size_t size)
 		}
 	}
 	
-	ConsoleWriteString("\nUnallocated ");
+	ConsoleWriteString("\nDeallocated ");
 	ConsoleWriteInt(blocksUnallocated, DECIMAL);
 	ConsoleWriteString(" blocks at address: 0x");
 	ConsoleWriteInt(address, HEX);
