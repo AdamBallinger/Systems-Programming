@@ -3,7 +3,7 @@
 .DEFAULT_GOAL:=all
 
 CFLAGS= -ffreestanding -m32 -march=pentium -I../include/
-OBJS= kernel_main.o console.o string.o exception.o physicalmemorymanager.o virtualmemorymanager.o vm_pte.o vm_pde.o command.o keyboard.o floppydisk.o
+OBJS= kernel_main.o console.o string.o exception.o physicalmemorymanager.o virtualmemorymanager.o vm_pte.o vm_pde.o command.o keyboard.o floppydisk.o fat12.o
 HAL_OBJS = hal/cpu.o hal/gdt.o hal/hal.o hal/idt.o hal/pic.o hal/pit.o hal/dma.o
 
 .SUFFIXES: .bin .asm .sys .o

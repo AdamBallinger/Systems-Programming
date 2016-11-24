@@ -4,6 +4,7 @@
 #include <keyboard.h>
 #include <floppydisk.h>
 #include <command.h>
+#include <fat12.h>
 #include "exception.h"
 #include "physicalmemorymanager.h"
 #include "virtualmemorymanager.h"
@@ -91,6 +92,8 @@ void Initialise()
 	FloppyDriveSetWorkingDrive(_bootInfo->BootDevice);
 	// install floppy disk to interrupt vector 38, uses IRQ 6
 	FloppyDriveInstall(38);
+	
+	FsFat12_Initialise();
 }
 
 void main(BootInfo * bootInfo) 

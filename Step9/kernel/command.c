@@ -90,6 +90,19 @@ void ProcessCMD(char* cmd)
 		running = false;
 		return;
 	}
+	
+	if(strcmp("prompt", cmd) == 0)
+	{
+		char* arg = GetStringArgument(cmd);
+		if(arg)
+		{
+			cmd_prompt = arg;
+		}
+		return;
+	}
+	
+	ConsoleWriteString("\nUnknown command: ");
+	ConsoleWriteString(cmd);
 }
 
 void PrintPrompt()
@@ -97,4 +110,16 @@ void PrintPrompt()
 	ConsoleWriteString("\n");
 	ConsoleWriteString(cmd_prompt);
 	ConsoleWriteString(">");
+}
+
+char* GetStringArgument(char* source)
+{
+	
+	return 0;
+}
+
+int GetIntArgument(char* source)
+{
+	
+	return 0;
 }
