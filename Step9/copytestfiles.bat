@@ -7,4 +7,3 @@ rem  Add commands here to copy test files to disk y
 copy testdoc.txt y:\
 rem
 imdisk -D -m y:
-pause

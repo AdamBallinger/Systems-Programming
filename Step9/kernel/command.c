@@ -16,8 +16,7 @@ bool running = true;
 
 void Run() 
 {
-	ConsoleWriteString(cmd_prompt);
-	ConsoleWriteString(">");
+	PrintPrompt();
 	
 	while(running)
 	{

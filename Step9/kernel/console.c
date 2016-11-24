@@ -128,6 +128,11 @@ void ConsoleWriteInt(unsigned int i, unsigned int base)
     }
 	else
 	{
+		if(base == 16)
+		{
+			ConsoleWriteString("0x");
+		}
+		
 		while (i != 0) 
 		{
 			stringBuffer[pos] = hexChars[i % base];

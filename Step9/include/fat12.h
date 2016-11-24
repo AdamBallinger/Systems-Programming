@@ -6,6 +6,8 @@
 #include <bpb.h>
 #include <console.h>
 
+BootSector* bootSector;
+
 // Initialises the FAT12 file system.
 void FsFat12_Initialise();
 
