@@ -4,6 +4,6 @@ rem in the line below and in the line at the end of the file.
 imdisk -a -t file -f uodos.img -o rem -m y:
 rem
 rem  Add commands here to copy test files to disk y
-copy testdoc.txt y:\
+copy TESTDOC1.TXT y:\
 rem
 imdisk -D -m y:
