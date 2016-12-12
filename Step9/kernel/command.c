@@ -61,6 +61,7 @@ void Run()
 		}
 		
 		Append(currentInput, keyChar);
+		inputLength++;
 		ConsoleWriteCharacter(keyChar);
 	}	
 }
@@ -70,19 +71,21 @@ void Append(char* destination, char source)
 	size_t len = strlen(destination);
 	destination[len] = source;
 	destination[len + 1] = '\0';
-	inputLength++;
 }
 
 void ProcessCMD(char* cmd)
 {
+	char* cmdArg; 
+	GetStringArgument(0, cmdArg, cmd);
+
 	// If two strings are exactly the same.
-	if(strcmp("cls", cmd) == 0)
+	if(strcmp("cls", cmdArg) == 0)
 	{
 		ConsoleClearScreen(0x1F);
 		return;
 	}
 	
-	if(strcmp("exit", cmd) == 0)
+	if(strcmp("exit", cmdArg) == 0)
 	{
 		ConsoleWriteString("\n");
 		ConsoleWriteString("Operating system shutting down.");
@@ -90,18 +93,14 @@ void ProcessCMD(char* cmd)
 		return;
 	}
 	
-	if(strcmp("prompt", cmd) == 0)
+	if(strcmp("prompt", cmdArg) == 0)
 	{
-		char* arg = GetStringArgument(cmd);
-		if(arg)
-		{
-			cmd_prompt = arg;
-		}
+		GetStringArgument(1, cmd_prompt, cmd);
 		return;
 	}
 	
 	ConsoleWriteString("\nUnknown command: ");
-	ConsoleWriteString(cmd);
+	ConsoleWriteString(cmdArg);
 }
 
 void PrintPrompt()
@@ -111,10 +110,50 @@ void PrintPrompt()
 	ConsoleWriteString(">");
 }
 
-char* GetStringArgument(char* source)
+// Get an argument as a string from a given command, and place it in the given destination.
+void GetStringArgument(int argIndex, char* dest, char* source)
 {
+	// Where in the string the last space was detected.
+	int last_space_index = 0;
 	
-	return 0;
+	// Current argument being scanned.
+	int argCounter = 0;
+
+	// Add a space on to the end of the source so the end argument can be retrieved.
+	Append(source, ' ');
+
+	for (int i = 0; i < strlen(source); ++i)
+	{
+		if (source[i] == 0) // null check
+		{
+			break;
+		}
+
+		// When a space if found,
+		if (source[i] == ' ')
+		{
+			// Check if the argument counter matches the requested argument index.
+			if(argCounter != argIndex)
+			{
+				// If not then increment argument count and record the current string index as 
+				// the last detected space position.
+				argCounter++;
+				last_space_index = i + 1;
+				continue;
+			}
+
+			// If the arg counter matches the requested argument index 
+			for (int j = 0; j < i - last_space_index; j++)
+			{
+				// Add each character from the last recorded space index to the current.
+				dest[j] = source[last_space_index + j];
+			}
+
+			// Null terminate the argument.
+			dest[i - last_space_index] = '\0';
+			return;
+		}
+	}
 }
 
 int GetIntArgument(char* source)
