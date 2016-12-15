@@ -18,7 +18,12 @@ void FsFat12_Initialise()
 		DirectoryEntry* directory = (DirectoryEntry*)FloppyDriveReadSector(fileSysInfo->rootOffset + i);
 		for(int j = 0; j < 16; j++)
 		{
-			ConsoleWriteString(" , ");
+			if(directory->Filename[0] == 0)
+			{
+				directory++;
+				continue;
+			}
+			ConsoleWriteString("\n");
 			ConsoleWriteString(directory->Filename);
 			directory++;
 		}
