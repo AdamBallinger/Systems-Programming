@@ -114,7 +114,15 @@ void ProcessCMD(char* cmd)
 	if(strcmp("prompt", cmdArg) == 0)
 	{
 		char prompt[255];
-		GetStringArgument(1, cmd_prompt, cmd);
+		GetStringArgument(1, prompt, cmd);
+		
+		if(prompt[0] == '\0')
+		{
+			ConsoleWriteString("\nInvalid command usage. Usage: prompt <string>");
+			return;
+		}
+		
+		strcpy(cmd_prompt, prompt);
 		return;
 	}
 	
@@ -153,17 +161,12 @@ void GetStringArgument(int argIndex, char* dest, char* source)
 	int argCounter = 0;
 
 	// Add a space on to the end of the source so the end argument can be retrieved.
-	Append(source, ' ');
+	//Append(source, ' ');
 
-	for (int i = 0; i < strlen(source); ++i)
+	for (int i = 0; i <= strlen(source); ++i)
 	{
-		if (source[i] == 0) // null check
-		{				
-			break;
-		}
-
-		// When a space if found,
-		if (source[i] == ' ')
+		// When a space is found,
+		if (source[i] == ' ' || source[i] == '\0')
 		{
 			// Check if the argument counter matches the requested argument index.
 			if(argCounter != argIndex)
@@ -187,6 +190,8 @@ void GetStringArgument(int argIndex, char* dest, char* source)
 			return;
 		}
 	}
+
+	dest[0] = '\0';
 }
 
 int GetIntArgument(char* source)
