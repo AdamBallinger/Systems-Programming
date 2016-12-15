@@ -12,6 +12,18 @@ void FsFat12_Initialise()
 	fileSysInfo->rootOffset = (bootSector->Bpb.NumberOfFats * bootSector->Bpb.SectorsPerFat) + 1;
 	fileSysInfo->rootSize = (bootSector->Bpb.NumDirEntries * 32) / bootSector->Bpb.BytesPerSector;
 	
+	// 14 sectors
+	for(int i = 0; i < 14; i++)
+	{
+		DirectoryEntry* directory = (DirectoryEntry*)FloppyDriveReadSector(fileSysInfo->rootOffset + i);
+		for(int j = 0; j < 16; j++)
+		{
+			ConsoleWriteString(" , ");
+			ConsoleWriteString(directory->Filename);
+			directory++;
+		}
+	}
+	
 	//PrintBootSectorInfo();
 }
 
