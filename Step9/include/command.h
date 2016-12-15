@@ -4,6 +4,7 @@
 void Run();
 void ClearInput();
 void Append(char* destination, char source);
+void RemoveLast(char* destination, const char* source);
 void ProcessCMD(char* cmd);
 void PrintPrompt();
 void GetStringArgument(int argIndex, char* dest, char* source);

@@ -34,7 +34,8 @@ void Run()
 			if(inputLength > 0 && currentConsoleX > 0)
 			{
 				ConsoleGotoXY(--currentConsoleX, currentConsoleY);
-				currentInput[--inputLength] = 0;
+				RemoveLast(currentInput, currentInput);
+				inputLength--;
 				ConsoleWriteCharacter(' ');
 				ConsoleGotoXY(currentConsoleX, currentConsoleY);
 			}
@@ -53,15 +54,20 @@ void Run()
 					PrintPrompt();
 				}
 				
-				currentInput[0] = 0;
+				currentInput[0] = '\0';
 				inputLength = 0;
 			}
 
 			continue;
 		}
 		
+		if(inputLength == 255) 
+		{
+			continue;
+		}
+		
 		Append(currentInput, keyChar);
-		inputLength++;
+		inputLength++;	
 		ConsoleWriteCharacter(keyChar);
 	}	
 }
@@ -73,9 +79,21 @@ void Append(char* destination, char source)
 	destination[len + 1] = '\0';
 }
 
+void RemoveLast(char* destination, const char* source)
+{
+	size_t len = strlen(source);
+	
+	for(size_t i = 0; i < len - 1; i++)
+	{
+		destination[i] = source[i];
+	}
+	
+	destination[len - 1] = '\0';
+}
+
 void ProcessCMD(char* cmd)
 {
-	char* cmdArg; 
+	char cmdArg[255]; 
 	GetStringArgument(0, cmdArg, cmd);
 
 	// If two strings are exactly the same.
@@ -95,7 +113,22 @@ void ProcessCMD(char* cmd)
 	
 	if(strcmp("prompt", cmdArg) == 0)
 	{
+		char prompt[255];
 		GetStringArgument(1, cmd_prompt, cmd);
+		return;
+	}
+	
+	if(strcmp("read", cmdArg) == 0)
+	{
+		char filePath[255];
+		GetStringArgument(1, filePath, cmd);
+		return;
+	}
+	
+	if(strcmp("cd", cmdArg) == 0)
+	{
+		char dir[255];
+		GetStringArgument(1, dir, cmd);
 		return;
 	}
 	
@@ -125,7 +158,7 @@ void GetStringArgument(int argIndex, char* dest, char* source)
 	for (int i = 0; i < strlen(source); ++i)
 	{
 		if (source[i] == 0) // null check
-		{
+		{				
 			break;
 		}
 
