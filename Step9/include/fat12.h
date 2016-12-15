@@ -6,7 +6,22 @@
 #include <bpb.h>
 #include <console.h>
 
+typedef struct _FileSystemInfo
+{
+	uint32_t numSectors;
+	uint32_t fatOffset;
+	uint32_t numRootEntries;
+	uint32_t rootOffset;
+	uint32_t rootSize;
+	uint32_t fatSize;
+	uint32_t fatEntrySize;
+} FileSystemInfo, *PFileSystemInfo;
+
+
 BootSector* bootSector;
+FileSystemInfo* fileSysInfo;
+DirectoryEntry* rootDir;
+
 
 // Initialises the FAT12 file system.
 void FsFat12_Initialise();
@@ -20,5 +35,8 @@ unsigned int FsFat12_Read(PFILE _file, unsigned char* _buffer, unsigned int _len
 
 // Sets EOF flag of given file to 1.
 void FsFat12_Close(PFILE _file);
+
+// Print the information about the boot sector to the console.
+void PrintBootSectorInfo();
 
 #endif
