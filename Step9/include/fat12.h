@@ -23,7 +23,7 @@ typedef struct _FileSystemInfo
 } FileSystemInfo;
 
 // Pointer to file system boot sector.
-BootSector* bootSector;
+pBootSector bootSector;
 
 // Info about the file system.
 FileSystemInfo* fileSysInfo;

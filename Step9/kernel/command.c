@@ -1,19 +1,17 @@
 #include <command.h>
 #include <console.h>
 #include <keyboard.h>
-#include <hal.h>
 #include <stdint.h>
-#include <ctype.h>
 #include <string.h>
-#include <floppydisk.h>
-#include <fat12.h>
 
-char cmd_prompt[255] = "Command";
+char cmd_prompt[256] = "Command";
 
 uint32_t inputLength = 0;
-char currentInput[255];
+char currentInput[256];
 
-bool running = true;
+_Bool running = true;
+
+char currentDirectory[256];
 
 void Run() 
 {
@@ -27,7 +25,7 @@ void Run()
 		
 		if(keycode == KEY_UNKNOWN) continue;
 		
-		int currentConsoleX, currentConsoleY;
+		unsigned int currentConsoleX, currentConsoleY;
 		ConsoleGetXY(&currentConsoleX, &currentConsoleY);
 		
 		if(keycode == KEY_BACKSPACE)
@@ -55,14 +53,14 @@ void Run()
 					PrintPrompt();
 				}
 				
-				memset(currentInput, 0, 255);
+				memset(currentInput, 0, 256);
 				inputLength = 0;
 			}
 
 			continue;
 		}
 		
-		if(inputLength == 255) 
+		if(inputLength == 256) 
 		{
 			continue;
 		}
@@ -106,7 +104,7 @@ void CopyTo(char* _destination, const char* _source)
 
 void ProcessCMD(char* _cmd)
 {
-	char cmdArg[255]; 
+	char cmdArg[256]; 
 	GetStringArgument(0, cmdArg, _cmd);
 
 	// If two strings are exactly the same.
@@ -122,7 +120,7 @@ void ProcessCMD(char* _cmd)
 	}
 	else if(strcmp("prompt", cmdArg) == 0)
 	{
-		char prompt[255];
+		char prompt[256];
 		GetStringArgument(1, prompt, _cmd);
 		
 		if(prompt[0] == 0)
@@ -135,7 +133,7 @@ void ProcessCMD(char* _cmd)
 	}
 	else if(strcmp("read", cmdArg) == 0)
 	{
-		char filePath[255];
+		char filePath[256];
 		GetStringArgument(1, filePath, _cmd);
 		
 		if(filePath[0] == 0)
@@ -143,10 +141,12 @@ void ProcessCMD(char* _cmd)
 			ConsoleWriteString("\nInvalid command usage. Usage: read <path>");
 			return;
 		}
+
+		//TODO: Append given path to the current directory (just store as a char[256]) and load it using FsFat12_Open
 	}
 	else if(strcmp("cd", cmdArg) == 0)
 	{
-		char dir[255];
+		char dir[256];
 		GetStringArgument(1, dir, _cmd);
 		
 		if(dir[0] == 0)
@@ -216,10 +216,4 @@ void GetStringArgument(int _argIndex, char* _dest, char* _source)
 	}
 
 	_dest[0] = 0;
-}
-
-int GetIntArgument(char* _source)
-{
-	
-	return 0;
 }

@@ -2,7 +2,7 @@
 
 void FsFat12_Initialise()
 {
-	bootSector = (BootSector*)FloppyDriveReadSector(0);
+	bootSector = (pBootSector)FloppyDriveReadSector(0);
 	
 	fileSysInfo->numSectors = bootSector->Bpb.NumSectors;
 	fileSysInfo->fatOffset = 1;
@@ -34,7 +34,7 @@ FILE FsFat12_Open(const char* _fileName)
 		FILE file;
 		char* path = (char*) _fileName;
 		char* p;
-		bool rootDir = true;
+		_Bool rootDir = true;
 		
 		p = strchr(path, '\\');
 		if(!p)
@@ -281,7 +281,7 @@ void PrintBootSectorInfo()
 	ConsoleWriteInt(FloppyDriveGetWorkingDrive(), 10);
 	
 	ConsoleWriteString("\t\t\tOEM ID: ");
-	ConsoleWriteInt(bootSector->Bpb.OEMName, 10);
+	ConsoleWriteInt((unsigned int)bootSector->Bpb.OEMName, 10);
 	
 	ConsoleWriteString("\nBytes per Sector: ");
 	ConsoleWriteInt(bootSector->Bpb.BytesPerSector, 10);
