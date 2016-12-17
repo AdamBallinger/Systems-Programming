@@ -81,7 +81,7 @@ void Append(char* _destination, char _source)
 
 void AppendAll(char* _destination, const char* _source)
 {
-	while(*_source)
+	while (*_source)
 	{
 		Append(_destination, *_source);
 		*_source++;
@@ -91,12 +91,6 @@ void AppendAll(char* _destination, const char* _source)
 void RemoveLast(char* _destination, const char* _source)
 {
 	size_t len = strlen(_source);
-
-	for (size_t i = 0; i < len - 1; i++)
-	{
-		_destination[i] = _source[i];
-	}
-
 	_destination[len - 1] = 0;
 }
 
@@ -182,6 +176,11 @@ void ProcessCMD(char* _cmd)
 	{
 		ConsoleWriteString("\n");
 		ConsoleWriteString(currentDirectory);
+	}
+	else if (strcmp("dir", cmdArg) == 0)
+	{
+		ConsoleWriteString("\n");
+		// TODO: List all files/folders in the current directory.
 	}
 	else
 	{
