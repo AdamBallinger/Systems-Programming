@@ -143,3 +143,15 @@ unsigned short * memsetw(unsigned short * destination, unsigned short val, size_
     return destination;
 }
 
+char* strchr(const char* _source, int _char)
+{
+	while(*_source++)
+	{
+		if(*_source == _char)
+		{
+			return (char*)_source;
+		}
+	}
+	
+	return 0;
+}

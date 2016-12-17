@@ -14,4 +14,7 @@ errno_t memcpy_s(void *destination, size_t destinationSize, const void *source, 
 void * memset(void *destination, char val, size_t count);
 unsigned short * memsetw(unsigned short * destination, unsigned short val, size_t count);
 
+// returns a pointer to first occurrence of _char in _source.
+char* strchr(const char* _source, int _char);
+
 #endif

@@ -3,11 +3,12 @@
 
 void Run();
 void ClearInput();
-void Append(char* destination, char source);
-void RemoveLast(char* destination, const char* source);
-void ProcessCMD(char* cmd);
+void Append(char* _destination, char _source);
+void RemoveLast(char* _destination, const char* _source);
+void CopyTo(char* _destination, const char* _source);
+void ProcessCMD(char* _cmd);
 void PrintPrompt();
-void GetStringArgument(int argIndex, char* dest, char* source);
-int GetIntArgument(char* source);
+void GetStringArgument(int _argIndex, char* _dest, char* _source);
+int GetIntArgument(char* _source);
 
 #endif

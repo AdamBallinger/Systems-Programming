@@ -6,8 +6,9 @@
 #include <ctype.h>
 #include <string.h>
 #include <floppydisk.h>
+#include <fat12.h>
 
-char* cmd_prompt = "Command";
+char cmd_prompt[255] = "Command";
 
 uint32_t inputLength = 0;
 char currentInput[255];
@@ -54,7 +55,7 @@ void Run()
 					PrintPrompt();
 				}
 				
-				currentInput[0] = '\0';
+				memset(currentInput, 0, 255);
 				inputLength = 0;
 			}
 
@@ -72,76 +73,102 @@ void Run()
 	}	
 }
 
-void Append(char* destination, char source)
+void Append(char* _destination, char _source)
 {
-	size_t len = strlen(destination);
-	destination[len] = source;
-	destination[len + 1] = '\0';
+	size_t len = strlen(_destination);
+	_destination[len] = _source;
+	_destination[len + 1] = 0;
 }
 
-void RemoveLast(char* destination, const char* source)
+void RemoveLast(char* _destination, const char* _source)
 {
-	size_t len = strlen(source);
+	size_t len = strlen(_source);
 	
 	for(size_t i = 0; i < len - 1; i++)
 	{
-		destination[i] = source[i];
+		_destination[i] = _source[i];
 	}
 	
-	destination[len - 1] = '\0';
+	_destination[len - 1] = 0;
 }
 
-void ProcessCMD(char* cmd)
+void CopyTo(char* _destination, const char* _source)
+{
+	size_t len = strlen(_source);
+	
+	for(size_t i = 0; i < len; i++)
+	{
+		_destination[i] = _source[i];
+	}
+	
+	_destination[len] = 0;
+}
+
+void ProcessCMD(char* _cmd)
 {
 	char cmdArg[255]; 
-	GetStringArgument(0, cmdArg, cmd);
+	GetStringArgument(0, cmdArg, _cmd);
 
 	// If two strings are exactly the same.
 	if(strcmp("cls", cmdArg) == 0)
 	{
 		ConsoleClearScreen(0x1F);
-		return;
 	}
-	
-	if(strcmp("exit", cmdArg) == 0)
+	else if(strcmp("exit", cmdArg) == 0)
 	{
 		ConsoleWriteString("\n");
 		ConsoleWriteString("Operating system shutting down.");
 		running = false;
-		return;
 	}
-	
-	if(strcmp("prompt", cmdArg) == 0)
+	else if(strcmp("prompt", cmdArg) == 0)
 	{
 		char prompt[255];
-		GetStringArgument(1, prompt, cmd);
+		GetStringArgument(1, prompt, _cmd);
 		
-		if(prompt[0] == '\0')
+		if(prompt[0] == 0)
 		{
-			ConsoleWriteString("\nInvalid command usage. Usage: prompt <string>");
+			ConsoleWriteString("\nInvalid command usage. Usage: prompt <word>");
 			return;
 		}
 		
-		strcpy(cmd_prompt, prompt);
-		return;
+		CopyTo(cmd_prompt, prompt);
 	}
-	
-	if(strcmp("read", cmdArg) == 0)
+	else if(strcmp("read", cmdArg) == 0)
 	{
 		char filePath[255];
-		GetStringArgument(1, filePath, cmd);
-		return;
+		GetStringArgument(1, filePath, _cmd);
+		
+		if(filePath[0] == 0)
+		{
+			ConsoleWriteString("\nInvalid command usage. Usage: read <path>");
+			return;
+		}
 	}
-	
-	if(strcmp("cd", cmdArg) == 0)
+	else if(strcmp("cd", cmdArg) == 0)
 	{
 		char dir[255];
-		GetStringArgument(1, dir, cmd);
-		return;
+		GetStringArgument(1, dir, _cmd);
+		
+		if(dir[0] == 0)
+		{
+			ConsoleWriteString("\nInvalid command usage. Usage cd <path> | . | ..");
+			return;
+		}
+		
+		if(strcmp(dir, ".") == 0)
+		{
+			ConsoleWriteString("\nStaying in current directory.");
+		}
+		else if(strcmp(dir, "..") == 0)
+		{
+			ConsoleWriteString("\nMoving back a directory.");
+		}
 	}
-	
-	ConsoleWriteString("\nUnknown command: ");
-	ConsoleWriteString(cmdArg);
+	else
+	{
+		ConsoleWriteString("\nUnknown command: ");
+		ConsoleWriteString(cmdArg);
+	}
 }
 
 void PrintPrompt()
@@ -152,7 +179,7 @@ void PrintPrompt()
 }
 
 // Get an argument as a string from a given command, and place it in the given destination.
-void GetStringArgument(int argIndex, char* dest, char* source)
+void GetStringArgument(int _argIndex, char* _dest, char* _source)
 {
 	// Where in the string the last space was detected.
 	int last_space_index = 0;
@@ -160,16 +187,13 @@ void GetStringArgument(int argIndex, char* dest, char* source)
 	// Current argument being scanned.
 	int argCounter = 0;
 
-	// Add a space on to the end of the source so the end argument can be retrieved.
-	//Append(source, ' ');
-
-	for (int i = 0; i <= strlen(source); ++i)
+	for (int i = 0; i <= strlen(_source); ++i)
 	{
 		// When a space is found,
-		if (source[i] == ' ' || source[i] == '\0')
+		if (_source[i] == ' ' || _source[i] == 0)
 		{
 			// Check if the argument counter matches the requested argument index.
-			if(argCounter != argIndex)
+			if(argCounter != _argIndex)
 			{
 				// If not then increment argument count and record the current string index as 
 				// the last detected space position.
@@ -182,19 +206,19 @@ void GetStringArgument(int argIndex, char* dest, char* source)
 			for (int j = 0; j < i - last_space_index; j++)
 			{
 				// Add each character from the last recorded space index to the current.
-				dest[j] = source[last_space_index + j];
+				_dest[j] = _source[last_space_index + j];
 			}
 
 			// Null terminate the argument.
-			dest[i - last_space_index] = '\0';
+			_dest[i - last_space_index] = 0;
 			return;
 		}
 	}
 
-	dest[0] = '\0';
+	_dest[0] = 0;
 }
 
-int GetIntArgument(char* source)
+int GetIntArgument(char* _source)
 {
 	
 	return 0;
