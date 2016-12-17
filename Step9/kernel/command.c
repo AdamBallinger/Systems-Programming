@@ -11,26 +11,27 @@ char currentInput[256];
 
 _Bool running = true;
 
-char currentDirectory[256];
+// Start in root directory.
+char currentDirectory[256] = "\\";
 
-void Run() 
+void Run()
 {
 	PrintPrompt();
-	
-	while(running)
+
+	while (running)
 	{
 		// Get ASCII character for the key pressed.
 		char keycode = KeyboardGetCharacter();
 		char keyChar = KeyboardConvertKeyToASCII(keycode);
-		
-		if(keycode == KEY_UNKNOWN) continue;
-		
+
+		if (keycode == KEY_UNKNOWN) continue;
+
 		unsigned int currentConsoleX, currentConsoleY;
 		ConsoleGetXY(&currentConsoleX, &currentConsoleY);
-		
-		if(keycode == KEY_BACKSPACE)
+
+		if (keycode == KEY_BACKSPACE)
 		{
-			if(inputLength > 0 && currentConsoleX > 0)
+			if (inputLength > 0 && currentConsoleX > 0)
 			{
 				ConsoleGotoXY(--currentConsoleX, currentConsoleY);
 				RemoveLast(currentInput, currentInput);
@@ -41,34 +42,34 @@ void Run()
 
 			continue;
 		}
-		
-		if(keycode == KEY_RETURN)
+
+		if (keycode == KEY_RETURN)
 		{
-			if(inputLength > 0)
+			if (inputLength > 0)
 			{
 				ProcessCMD(currentInput);
-				
-				if(running)
+
+				if (running)
 				{
 					PrintPrompt();
 				}
-				
+
 				memset(currentInput, 0, 256);
 				inputLength = 0;
 			}
 
 			continue;
 		}
-		
-		if(inputLength == 256) 
+
+		if (inputLength == 256)
 		{
 			continue;
 		}
-		
+
 		Append(currentInput, keyChar);
-		inputLength++;	
+		inputLength++;
 		ConsoleWriteCharacter(keyChar);
-	}	
+	}
 }
 
 void Append(char* _destination, char _source)
@@ -78,91 +79,109 @@ void Append(char* _destination, char _source)
 	_destination[len + 1] = 0;
 }
 
+void AppendAll(char* _destination, const char* _source)
+{
+	while(*_source)
+	{
+		Append(_destination, *_source);
+		*_source++;
+	}
+}
+
 void RemoveLast(char* _destination, const char* _source)
 {
 	size_t len = strlen(_source);
-	
-	for(size_t i = 0; i < len - 1; i++)
+
+	for (size_t i = 0; i < len - 1; i++)
 	{
 		_destination[i] = _source[i];
 	}
-	
+
 	_destination[len - 1] = 0;
 }
 
 void CopyTo(char* _destination, const char* _source)
 {
 	size_t len = strlen(_source);
-	
-	for(size_t i = 0; i < len; i++)
+
+	for (size_t i = 0; i < len; i++)
 	{
 		_destination[i] = _source[i];
 	}
-	
+
 	_destination[len] = 0;
 }
 
 void ProcessCMD(char* _cmd)
 {
-	char cmdArg[256]; 
+	char cmdArg[256];
 	GetStringArgument(0, cmdArg, _cmd);
 
 	// If two strings are exactly the same.
-	if(strcmp("cls", cmdArg) == 0)
+	if (strcmp("cls", cmdArg) == 0)
 	{
 		ConsoleClearScreen(0x1F);
 	}
-	else if(strcmp("exit", cmdArg) == 0)
+	else if (strcmp("exit", cmdArg) == 0)
 	{
 		ConsoleWriteString("\n");
 		ConsoleWriteString("Operating system shutting down.");
 		running = false;
 	}
-	else if(strcmp("prompt", cmdArg) == 0)
+	else if (strcmp("prompt", cmdArg) == 0)
 	{
 		char prompt[256];
 		GetStringArgument(1, prompt, _cmd);
-		
-		if(prompt[0] == 0)
+
+		if (prompt[0] == 0)
 		{
 			ConsoleWriteString("\nInvalid command usage. Usage: prompt <word>");
 			return;
 		}
-		
+
 		CopyTo(cmd_prompt, prompt);
 	}
-	else if(strcmp("read", cmdArg) == 0)
+	else if (strcmp("read", cmdArg) == 0)
 	{
 		char filePath[256];
 		GetStringArgument(1, filePath, _cmd);
-		
-		if(filePath[0] == 0)
+
+		if (filePath[0] == 0)
 		{
 			ConsoleWriteString("\nInvalid command usage. Usage: read <path>");
 			return;
 		}
 
-		//TODO: Append given path to the current directory (just store as a char[256]) and load it using FsFat12_Open
+		//TODO: Use FsFat12_Open but add filePath to end of currentDirectory (dont actually update the currentDirectory though)
 	}
-	else if(strcmp("cd", cmdArg) == 0)
+	else if (strcmp("cd", cmdArg) == 0)
 	{
 		char dir[256];
 		GetStringArgument(1, dir, _cmd);
-		
-		if(dir[0] == 0)
+
+		if (dir[0] == 0)
 		{
 			ConsoleWriteString("\nInvalid command usage. Usage cd <path> | . | ..");
 			return;
 		}
-		
-		if(strcmp(dir, ".") == 0)
+
+		if (strcmp(dir, ".") == 0)
 		{
 			ConsoleWriteString("\nStaying in current directory.");
 		}
-		else if(strcmp(dir, "..") == 0)
+		else if (strcmp(dir, "..") == 0)
 		{
 			ConsoleWriteString("\nMoving back a directory.");
 		}
+		else
+		{
+			AppendAll(currentDirectory, dir);
+		}
+	}
+	else if (strcmp("pwd", cmdArg) == 0)
+	{
+		ConsoleWriteString("\n");
+		ConsoleWriteString(currentDirectory);
 	}
 	else
 	{
@@ -183,7 +202,7 @@ void GetStringArgument(int _argIndex, char* _dest, char* _source)
 {
 	// Where in the string the last space was detected.
 	int last_space_index = 0;
-	
+
 	// Current argument being scanned.
 	int argCounter = 0;
 
@@ -193,7 +212,7 @@ void GetStringArgument(int _argIndex, char* _dest, char* _source)
 		if (_source[i] == ' ' || _source[i] == 0)
 		{
 			// Check if the argument counter matches the requested argument index.
-			if(argCounter != _argIndex)
+			if (argCounter != _argIndex)
 			{
 				// If not then increment argument count and record the current string index as 
 				// the last detected space position.
