@@ -108,6 +108,36 @@ void CopyTo(char* _destination, const char* _source)
 	_destination[len] = 0;
 }
 
+void DirectoryBack()
+{
+	size_t len = strlen(currentDirectory);
+
+	// If the length is 2 then the directory is ".\" and at the root so dont try go back a directory.
+	if (len == 2) return;
+
+	// Check for '\' at the of the current directory.
+	if (currentDirectory[len - 1] == '\\')
+	{
+		// if the directory ends in a '\' then delete every instance of this char from the current directory
+		// until we reach a character that isn't a '\'. This is so a directory such as '.\folder\folder2\\\\\\'
+		// will correctly go back to '.\folder\' instead of '.\folder\folder2\\\\\'
+		unsigned int i = len - 1;
+		while(currentDirectory[i] == '\\')
+		{
+			currentDirectory[i] = 0;
+			i--;
+		}
+	}
+
+	for (int i = len; i > 0; i--)
+	{
+		if (currentDirectory[i] == 0) continue;
+		if (currentDirectory[i] == '\\') break;
+
+		currentDirectory[i] = 0;
+	}
+}
+
 void ProcessCMD(char* _cmd)
 {
 	char cmdArg[256];
@@ -167,7 +197,6 @@ void ProcessCMD(char* _cmd)
 				ConsoleWriteCharacter(dat[i]);
 			}
 		}
-		//TODO: Use FsFat12_Open but add filePath to end of currentDirectory (dont actually update the currentDirectory though)
 	}
 	else if (strcmp("cd", cmdArg) == 0)
 	{
@@ -182,11 +211,14 @@ void ProcessCMD(char* _cmd)
 
 		if (strcmp(dir, ".") == 0)
 		{
-			ConsoleWriteString("\nStaying in current directory.");
+			ConsoleWriteString("\n");
+			ConsoleWriteString(currentDirectory);
 		}
 		else if (strcmp(dir, "..") == 0)
 		{
-			ConsoleWriteString("\nMoving back a directory.");
+			DirectoryBack();
+			ConsoleWriteString("\n");
+			ConsoleWriteString(currentDirectory);
 		}
 		else
 		{

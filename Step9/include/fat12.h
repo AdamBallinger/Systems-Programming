@@ -6,6 +6,7 @@
 #include <bpb.h>
 #include <console.h>
 #include <string.h>
+#include <stdint.h>
 #include <ctype.h>
 
 #define SECTOR_SIZE 512 // Size of a sector in bytes
@@ -20,6 +21,7 @@ typedef struct _FileSystemInfo
 	uint32_t rootSize;
 	uint32_t fatSize;
 	uint32_t fatEntrySize;
+	uint32_t dataOffset;
 } FileSystemInfo;
 
 // Pointer to file system boot sector.
@@ -27,9 +29,6 @@ pBootSector bootSector;
 
 // Info about the file system.
 FileSystemInfo* fileSysInfo;
-
-// The File Allocation Table
-uint8_t FAT[SECTOR_SIZE * 2];
 
 
 // Initialises the FAT12 file system.
