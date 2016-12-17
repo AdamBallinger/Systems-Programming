@@ -31,9 +31,6 @@ FileSystemInfo* fileSysInfo;
 // The File Allocation Table
 uint8_t FAT[SECTOR_SIZE * 2];
 
-// Currently active directory.
-FILE* workingDir;
-
 
 // Initialises the FAT12 file system.
 void FsFat12_Initialise();

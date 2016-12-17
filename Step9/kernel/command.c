@@ -3,6 +3,7 @@
 #include <keyboard.h>
 #include <stdint.h>
 #include <string.h>
+#include <fat12.h>
 
 char cmd_prompt[256] = "Command";
 
@@ -12,7 +13,7 @@ char currentInput[256];
 _Bool running = true;
 
 // Start in root directory.
-char currentDirectory[256] = "\\";
+char currentDirectory[256] = ".\\";
 
 void Run()
 {
@@ -34,7 +35,7 @@ void Run()
 			if (inputLength > 0 && currentConsoleX > 0)
 			{
 				ConsoleGotoXY(--currentConsoleX, currentConsoleY);
-				RemoveLast(currentInput, currentInput);
+				RemoveLast(currentInput);
 				inputLength--;
 				ConsoleWriteCharacter(' ');
 				ConsoleGotoXY(currentConsoleX, currentConsoleY);
@@ -88,9 +89,10 @@ void AppendAll(char* _destination, const char* _source)
 	}
 }
 
-void RemoveLast(char* _destination, const char* _source)
+void RemoveLast(char* _destination)
 {
-	size_t len = strlen(_source);
+	const char* source = _destination;
+	size_t len = strlen(source);
 	_destination[len - 1] = 0;
 }
 
@@ -146,6 +148,25 @@ void ProcessCMD(char* _cmd)
 			return;
 		}
 
+		char readDir[256];
+		memset(readDir, 0, 256);
+		AppendAll(readDir, currentDirectory);
+		AppendAll(readDir, filePath);
+
+		ConsoleWriteString("\nReading ");
+		ConsoleWriteString(readDir);
+		ConsoleWriteString("\n");
+
+		FILE file = FsFat12_Open(readDir);
+		if (file.Flags == FS_FILE)
+		{
+			char* dat = (char*)FloppyDriveReadSector(fileSysInfo->rootOffset +
+				fileSysInfo->rootSize + file.CurrentCluster + 3);
+			for (int i = 0; i < file.FileLength; i++)
+			{
+				ConsoleWriteCharacter(dat[i]);
+			}
+		}
 		//TODO: Use FsFat12_Open but add filePath to end of currentDirectory (dont actually update the currentDirectory though)
 	}
 	else if (strcmp("cd", cmdArg) == 0)
@@ -170,6 +191,7 @@ void ProcessCMD(char* _cmd)
 		else
 		{
 			AppendAll(currentDirectory, dir);
+			Append(currentDirectory, '\\');
 		}
 	}
 	else if (strcmp("pwd", cmdArg) == 0)
@@ -207,8 +229,8 @@ void GetStringArgument(int _argIndex, char* _dest, char* _source)
 
 	for (int i = 0; i <= strlen(_source); ++i)
 	{
-		// When a space is found,
-		if (_source[i] == ' ' || _source[i] == 0)
+		// When a space is found or the string ends.
+		if (_source[i] == 0 || _source[i] == ' ')
 		{
 			// Check if the argument counter matches the requested argument index.
 			if (argCounter != _argIndex)

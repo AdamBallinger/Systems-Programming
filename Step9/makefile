@@ -28,6 +28,7 @@ $(IMAGE).img : bootloader kernel
 	cmd /c "copy kernel.sys z:KERNEL.SYS"
 #	Unmount the floppy disk image
 	imdisk -D -m z:
+	cmd /c "copytestfiles.bat"
 
 $(IMAGE).iso: $(IMAGE).img
 	rm -rf cdiso
