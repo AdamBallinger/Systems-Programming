@@ -13,12 +13,20 @@ void FsFat12_Initialise()
 	fileSysInfo->rootSize = (bootSector->Bpb.NumDirEntries * 32) / bootSector->Bpb.BytesPerSector;
 	fileSysInfo->dataOffset = fileSysInfo->rootOffset + fileSysInfo->rootSize;
 
-	//ConsoleWriteString("\nRoot offset: ");
-	//ConsoleWriteInt(fileSysInfo->rootOffset, 10);
-	//ConsoleWriteString("\nRoot size: ");
-	//ConsoleWriteInt(fileSysInfo->rootSize, 10);
-	//ConsoleWriteString("\nData start: ");
-	//ConsoleWriteInt(fileSysInfo->dataOffset, 10);
+	for(unsigned int i = 0; i < fileSysInfo->fatEntrySize; i++)
+	{
+		unsigned int sector = fileSysInfo->fatOffset + i;
+		unsigned char* buffer = (unsigned char*)FloppyDriveReadSector(sector);
+		
+		FAT[i * SECTOR_SIZE] = (int8_t)buffer;
+	}
+
+	ConsoleWriteString("\nRoot offset: ");
+	ConsoleWriteInt(fileSysInfo->rootOffset, 10);
+	ConsoleWriteString("\nRoot size: ");
+	ConsoleWriteInt(fileSysInfo->rootSize, 10);
+	ConsoleWriteString("\nData start: ");
+	ConsoleWriteInt(fileSysInfo->dataOffset, 10);
 
 	//FILE file = FsFat12_Open(".\\test1.txt");
 	//if (file.Flags != FS_INVALID)
@@ -124,32 +132,70 @@ FILE FsFat12_Open(const char* _fileName)
 	return invalidFile;
 }
 
+
+// Read buffer to store sector data for files. Supports only the first 4k of any files.
+char readBuffer[4096];
+
 unsigned int FsFat12_Read(PFILE _file, unsigned char* _buffer, unsigned int _length)
 {
-	if (_length <= 0)
-	{
-		ConsoleWriteString("\n[ERROR] Attempted to read 0 bytes.");
-		FsFat12_Close(_file);
-		return 0;
-	}
+	// if length is 0 then likely trying to read a directory so just set it to read an entire sector.
+	if (_length == 0) _length = SECTOR_SIZE;
+
+	// clear the read buffer of any previous reads data.
+	memset(readBuffer, 0, 4096);
 
 	// Calculate how many sectors need to be read based on the value of length.
-	//unsigned int sectorsToRead = _length % SECTOR_SIZE == 0 ? 1 : _length / SECTOR_SIZE + 1;
-	//unsigned int bytesRead = 0;
+	unsigned int sectorsToRead = _length % SECTOR_SIZE == 0 ? 1 : _length / SECTOR_SIZE + 1;
+	unsigned int bytesRead = 0;
 
 	if (_file)
 	{
 		//ConsoleWriteString("\nReading file ");
 		//ConsoleWriteString(_file->Name);
+		//ConsoleWriteString("\n");
 
-		unsigned int physicalSector = fileSysInfo->rootOffset + fileSysInfo->rootSize + _file->CurrentCluster + 3;
-		unsigned char* sector = (unsigned char*)FloppyDriveReadSector(physicalSector);
+		//unsigned int physicalSector = fileSysInfo->rootOffset + fileSysInfo->rootSize + _file->CurrentCluster + 3;
+		//unsigned char* sector = (unsigned char*)FloppyDriveReadSector(physicalSector);
 
-		memcpy(_buffer, sector, _length);
-		FsFat12_Close(_file);
+		//memcpy(_buffer, sector, _length);
+		//FsFat12_Close(_file);
+
+		unsigned int physicalSector = fileSysInfo->dataOffset + _file->CurrentCluster + 3;
+		unsigned char* buffer = (unsigned char*)FloppyDriveReadSector(physicalSector);
+
+		memcpy(_buffer, buffer, _length);
+
+		unsigned int fatOffset = _file->CurrentCluster;
+		unsigned int fatSector = 1 + fatOffset / _length;
+		unsigned int tableOffset = fatOffset % _length;
+
+		buffer = (unsigned char*)FloppyDriveReadSector(fatSector);
+		memcpy(FAT, buffer, _length);
+
+		buffer = (unsigned char*)FloppyDriveReadSector(fatSector + 1);
+		memcpy(FAT + _length, buffer, _length);
+
+		uint16_t nextCluster = *(uint16_t*)&FAT[tableOffset];
+
+		if (_file->CurrentCluster & 0x0001)
+		{
+			nextCluster >>= 4;
+		}
+		else
+		{
+			nextCluster &= 0x0FFF;
+		}
+
+		if (nextCluster >= 0xFF8 || nextCluster == 0)
+		{
+			FsFat12_Close(_file);
+			return bytesRead;
+		}
+
+		_file->CurrentCluster = nextCluster;
 	}
 
-	return 0;
+	return bytesRead;
 }
 
 void FsFat12_Close(PFILE _file)
@@ -225,7 +271,7 @@ FILE FsFat12_OpenSubDir(FILE _file, const char* _fileName)
 	while (!_file.Eof)
 	{
 		unsigned char buffer[SECTOR_SIZE];
-		FsFat12_Read(&_file, buffer, SECTOR_SIZE);
+		FsFat12_Read(&_file, buffer, file.FileLength);
 
 		pDirectoryEntry subDir = (pDirectoryEntry)buffer;
 

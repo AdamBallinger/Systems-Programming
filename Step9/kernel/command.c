@@ -15,6 +15,9 @@ _Bool running = true;
 // Start in root directory.
 char currentDirectory[256] = ".\\";
 
+// Data buffer for read files.
+char data[4096];
+
 void Run()
 {
 	PrintPrompt();
@@ -190,11 +193,13 @@ void ProcessCMD(char* _cmd)
 		FILE file = FsFat12_Open(readDir);
 		if (file.Flags == FS_FILE)
 		{
-			char* dat = (char*)FloppyDriveReadSector(fileSysInfo->rootOffset +
-				fileSysInfo->rootSize + file.CurrentCluster + 3);
+			ConsoleWriteString("\nFile size (bytes): ");
+			ConsoleWriteInt(file.FileLength, 10);
+			ConsoleWriteString("\n");
+			FsFat12_Read(&file, data, file.FileLength);
 			for (int i = 0; i < file.FileLength; i++)
 			{
-				ConsoleWriteCharacter(dat[i]);
+				ConsoleWriteCharacter(data[i]);
 			}
 		}
 	}
