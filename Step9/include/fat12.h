@@ -23,15 +23,13 @@ typedef struct _FileSystemInfo
 	uint32_t fatEntrySize;
 	uint32_t dataOffset;
 } FileSystemInfo;
+typedef FileSystemInfo* pFileSystemInfo;
 
 // Pointer to file system boot sector.
 pBootSector bootSector;
 
 // Info about the file system.
-FileSystemInfo* fileSysInfo;
-
-uint8_t FAT[SECTOR_SIZE * 2];
-
+pFileSystemInfo fileSysInfo;
 
 // Initialises the FAT12 file system.
 void FsFat12_Initialise();

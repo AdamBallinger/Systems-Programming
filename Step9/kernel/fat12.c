@@ -9,41 +9,37 @@ void FsFat12_Initialise()
 	fileSysInfo->fatSize = bootSector->Bpb.SectorsPerFat;
 	fileSysInfo->fatEntrySize = 8;
 	fileSysInfo->numRootEntries = bootSector->Bpb.NumDirEntries;
-	fileSysInfo->rootOffset = bootSector->Bpb.NumberOfFats * bootSector->Bpb.SectorsPerFat + 1;
+	// Root offset = reserved sectors (including boot sector) + the number of sectors occupied by the FATs (both copies) - 1 (0 indexed)
+	fileSysInfo->rootOffset = bootSector->Bpb.ReservedSectors + bootSector->Bpb.NumberOfFats * bootSector->Bpb.SectorsPerFat - 1;
 	fileSysInfo->rootSize = (bootSector->Bpb.NumDirEntries * 32) / bootSector->Bpb.BytesPerSector;
-	fileSysInfo->dataOffset = fileSysInfo->rootOffset + fileSysInfo->rootSize;
+	fileSysInfo->dataOffset = fileSysInfo->rootOffset + fileSysInfo->rootSize - 1;
 
-	for(unsigned int i = 0; i < fileSysInfo->fatEntrySize; i++)
-	{
-		unsigned int sector = fileSysInfo->fatOffset + i;
-		unsigned char* buffer = (unsigned char*)FloppyDriveReadSector(sector);
-		
-		FAT[i * SECTOR_SIZE] = (int8_t)buffer;
-	}
+	//ConsoleWriteString("\nRoot offset: ");
+	//ConsoleWriteInt(fileSysInfo->rootOffset, 10);
+	//ConsoleWriteString("\nRoot size: ");
+	//ConsoleWriteInt(fileSysInfo->rootSize, 10);
+	//ConsoleWriteString("\nData start: ");
+	//ConsoleWriteInt(fileSysInfo->dataOffset, 10);
+	//ConsoleWriteString("\nReserved sectors: ");
+	//ConsoleWriteInt(bootSector->Bpb.ReservedSectors, 10);
 
-	ConsoleWriteString("\nRoot offset: ");
-	ConsoleWriteInt(fileSysInfo->rootOffset, 10);
-	ConsoleWriteString("\nRoot size: ");
-	ConsoleWriteInt(fileSysInfo->rootSize, 10);
-	ConsoleWriteString("\nData start: ");
-	ConsoleWriteInt(fileSysInfo->dataOffset, 10);
-
+	FILE file = FsFat12_Open(".\\folder\\test2.txt");
 	//FILE file = FsFat12_Open(".\\test1.txt");
-	//if (file.Flags != FS_INVALID)
-	//{
-	//	ConsoleWriteString("\nFile name: ");
-	//	ConsoleWriteString(file.Name);
-	//	ConsoleWriteString("\nFile size (bytes): ");
-	//	ConsoleWriteInt(file.FileLength, 10);
-	//	ConsoleWriteString("\nFile cluster: ");
-	//	ConsoleWriteInt(file.CurrentCluster, 10);
-	//	ConsoleWriteString("\nFile data: ");
-	//	char* dat = (char*)FloppyDriveReadSector(fileSysInfo->dataOffset + file.CurrentCluster + 3);
-	//	for (int i = 0; i < file.FileLength; i++)
-	//	{
-	//		ConsoleWriteCharacter(dat[i]);
-	//	}
-	//}
+	if (file.Flags == FS_FILE)
+	{
+		ConsoleWriteString("\nFile size (bytes): ");
+		ConsoleWriteInt(file.FileLength, 10);
+		unsigned char* data = 0;
+		while(file.Eof == 0)
+		{
+			FsFat12_Read(&file, data, file.FileLength);
+			ConsoleWriteString("\nFile data: \n");
+			for (int i = 0; i < file.FileLength; i++)
+			{
+				ConsoleWriteCharacter(data[i]);
+			}
+		}
+	}
 
 	//PrintBootSectorInfo();
 }
@@ -141,12 +137,9 @@ unsigned int FsFat12_Read(PFILE _file, unsigned char* _buffer, unsigned int _len
 	// if length is 0 then likely trying to read a directory so just set it to read an entire sector.
 	if (_length == 0) _length = SECTOR_SIZE;
 
-	// clear the read buffer of any previous reads data.
-	memset(readBuffer, 0, 4096);
-
 	// Calculate how many sectors need to be read based on the value of length.
-	unsigned int sectorsToRead = _length % SECTOR_SIZE == 0 ? 1 : _length / SECTOR_SIZE + 1;
-	unsigned int bytesRead = 0;
+	//unsigned int sectorsToRead = _length % SECTOR_SIZE == 0 ? 1 : _length / SECTOR_SIZE + 1;
+	//unsigned int bytesRead = 0;
 
 	if (_file)
 	{
@@ -154,48 +147,52 @@ unsigned int FsFat12_Read(PFILE _file, unsigned char* _buffer, unsigned int _len
 		//ConsoleWriteString(_file->Name);
 		//ConsoleWriteString("\n");
 
-		//unsigned int physicalSector = fileSysInfo->rootOffset + fileSysInfo->rootSize + _file->CurrentCluster + 3;
-		//unsigned char* sector = (unsigned char*)FloppyDriveReadSector(physicalSector);
-
-		//memcpy(_buffer, sector, _length);
-		//FsFat12_Close(_file);
-
-		unsigned int physicalSector = fileSysInfo->dataOffset + _file->CurrentCluster + 3;
+		unsigned int physicalSector = fileSysInfo->dataOffset + _file->CurrentCluster;
 		unsigned char* buffer = (unsigned char*)FloppyDriveReadSector(physicalSector);
 
 		memcpy(_buffer, buffer, _length);
 
-		unsigned int fatOffset = _file->CurrentCluster;
-		unsigned int fatSector = 1 + fatOffset / _length;
+		uint8_t FAT[SECTOR_SIZE * 2];
+		unsigned int fatOffset = 6 * 9;
+		unsigned int fatSector = fatOffset + _file->CurrentCluster * 3 / 2;
 		unsigned int tableOffset = fatOffset % _length;
 
+		ConsoleWriteString("\nReading FAT sector: ");
+		ConsoleWriteInt(fatSector, 10);
+
 		buffer = (unsigned char*)FloppyDriveReadSector(fatSector);
-		memcpy(FAT, buffer, _length);
+		memcpy(FAT, buffer, SECTOR_SIZE);
 
 		buffer = (unsigned char*)FloppyDriveReadSector(fatSector + 1);
-		memcpy(FAT + _length, buffer, _length);
+		memcpy(FAT + SECTOR_SIZE, buffer, SECTOR_SIZE);
 
-		uint16_t nextCluster = *(uint16_t*)&FAT[tableOffset];
+		uint8_t nextCluster = *(uint8_t*)&FAT[tableOffset];
 
-		if (_file->CurrentCluster & 0x0001)
+		//ConsoleWriteInt(nextCluster, 10);
+		//ConsoleWriteString(",");
+
+		if(_file->CurrentCluster & 0x0001)
 		{
-			nextCluster >>= 4;
+			nextCluster = nextCluster >> 4;
 		}
 		else
 		{
-			nextCluster &= 0x0FFF;
+			nextCluster = nextCluster & 0x0FFF;
 		}
 
 		if (nextCluster >= 0xFF8 || nextCluster == 0)
 		{
+			//ConsoleWriteString("Closing file.");
 			FsFat12_Close(_file);
-			return bytesRead;
+			return 0;
 		}
 
+		//ConsoleWriteString("\nNext cluster: ");
+		//ConsoleWriteInt(nextCluster, 16);
 		_file->CurrentCluster = nextCluster;
 	}
 
-	return bytesRead;
+	return 0;
 }
 
 void FsFat12_Close(PFILE _file)

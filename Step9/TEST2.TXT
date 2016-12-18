@@ -8,4 +8,4 @@ Repeat. Repeat. Repeat. Repeat. Repeat. Repeat. Repeat.
 Repeat. Repeat. Repeat. Repeat. Repeat. Repeat. Repeat.
 Repeat. Repeat. Repeat. Repeat. Repeat. Repeat. Repeat.
 Repeat. Repeat. Repeat. Repeat. Repeat. Repeat. Repeat.
-This file tests files with more than 512 bytes of data.
+This file uses more than 1 sector!

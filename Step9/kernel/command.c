@@ -125,7 +125,7 @@ void DirectoryBack()
 		// until we reach a character that isn't a '\'. This is so a directory such as '.\folder\folder2\\\\\\'
 		// will correctly go back to '.\folder\' instead of '.\folder\folder2\\\\\'
 		unsigned int i = len - 1;
-		while(currentDirectory[i] == '\\')
+		while (currentDirectory[i] == '\\')
 		{
 			currentDirectory[i] = 0;
 			i--;
@@ -195,8 +195,8 @@ void ProcessCMD(char* _cmd)
 		{
 			ConsoleWriteString("\nFile size (bytes): ");
 			ConsoleWriteInt(file.FileLength, 10);
-			ConsoleWriteString("\n");
 			FsFat12_Read(&file, data, file.FileLength);
+			ConsoleWriteString("\nFile data: \n");
 			for (int i = 0; i < file.FileLength; i++)
 			{
 				ConsoleWriteCharacter(data[i]);
