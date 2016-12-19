@@ -7,11 +7,8 @@ void FsFat12_Initialise()
 	// Read boot sector from floppy.
 	bootSector = (pBootSector)FloppyDriveReadSector(0);
 
-	fileSysInfo->numSectors = bootSector->Bpb.NumSectors;
+	// Offset for the first FAT sector.
 	fileSysInfo->fatOffset = bootSector->Bpb.ReservedSectors;
-	fileSysInfo->fatSize = bootSector->Bpb.SectorsPerFat;
-	fileSysInfo->fatEntrySize = 8;
-	fileSysInfo->numRootEntries = bootSector->Bpb.NumDirEntries;
 	// Root offset = reserved sectors (including boot sector) + the number of sectors occupied by the FATs (both copies) - 1 (0 indexed)
 	fileSysInfo->rootOffset = bootSector->Bpb.ReservedSectors + bootSector->Bpb.NumberOfFats * bootSector->Bpb.SectorsPerFat - 1;
 	fileSysInfo->rootSize = (bootSector->Bpb.NumDirEntries * 32) / bootSector->Bpb.BytesPerSector;

@@ -14,13 +14,9 @@
 // Struct for storing important information about the FS.
 typedef struct _FileSystemInfo
 {
-	uint32_t numSectors;
 	uint32_t fatOffset;
-	uint32_t numRootEntries;
 	uint32_t rootOffset;
 	uint32_t rootSize;
-	uint32_t fatSize;
-	uint32_t fatEntrySize;
 	uint32_t dataOffset;
 } FileSystemInfo;
 typedef FileSystemInfo* pFileSystemInfo;
