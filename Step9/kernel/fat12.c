@@ -17,14 +17,14 @@ void FsFat12_Initialise()
 	fileSysInfo->rootSize = (bootSector->Bpb.NumDirEntries * 32) / bootSector->Bpb.BytesPerSector;
 	fileSysInfo->dataOffset = fileSysInfo->rootOffset + fileSysInfo->rootSize - 1;
 
-	//ConsoleWriteString("\nRoot offset: ");
-	//ConsoleWriteInt(fileSysInfo->rootOffset, 10);
-	//ConsoleWriteString("\nRoot size: ");
-	//ConsoleWriteInt(fileSysInfo->rootSize, 10);
-	//ConsoleWriteString("\nData start: ");
-	//ConsoleWriteInt(fileSysInfo->dataOffset, 10);
-	//ConsoleWriteString("\nReserved sectors: ");
-	//ConsoleWriteInt(bootSector->Bpb.ReservedSectors, 10);
+	ConsoleWriteString("\nRoot offset: ");
+	ConsoleWriteInt(fileSysInfo->rootOffset, 10);
+	ConsoleWriteString("\nRoot size: ");
+	ConsoleWriteInt(fileSysInfo->rootSize, 10);
+	ConsoleWriteString("\nData start: ");
+	ConsoleWriteInt(fileSysInfo->dataOffset, 10);
+	ConsoleWriteString("\nReserved sectors: ");
+	ConsoleWriteInt(bootSector->Bpb.ReservedSectors, 10);
 
 	//PrintBootSectorInfo();
 }
@@ -37,7 +37,7 @@ FILE FsFat12_Open(const char* _fileName)
 		FILE file;
 		char* path = (char*)_fileName;
 		char* p;
-		_Bool rootDir = true;
+		bool rootDir = true;
 
 		p = strchr(path, '\\');
 		if (!p)
@@ -187,22 +187,30 @@ FILE FsFat12_OpenRoot(const char* _fileName)
 	{
 		pDirectoryEntry directory;
 
+		// Create the DOS 8.3 name for the file we are trying to open.
 		char dosName[12];
 		ConvertFileNameToDOS(_fileName, dosName);
+		// Null terminate the name so it can be used in a strcmp
 		dosName[11] = 0;
 
-		for (int sector = 0; sector < 14; sector++)
+		// Read each sector in the root directory. (224 total root entries * 32 bytes per entry = 7168. 7168 / 512 (bytes per sector) = 14)
+		for (int sector = 0; sector < fileSysInfo->rootSize; sector++)
 		{
 			directory = (pDirectoryEntry)FloppyDriveReadSector(fileSysInfo->rootOffset + sector);
 
+			// Each sector has 16 entries. (DirectoryEntries are 32 bytes each so 512 (bytes per sector) / 32 = 16)
 			for (int i = 0; i < 16; i++)
 			{
+				// Get the name for this directory.
 				char name[12];
 				memcpy(&name, directory->Filename, 11);
+				// Null terminate it for use in a strcmp wih dos name.
 				name[11] = 0;
 
+				// If the 2 names match then the root contains the file we are looking for.
 				if (strcmp(dosName, name) == 0)
 				{
+					// Populate the file struct
 					strcpy(file.Name, _fileName);
 					file.Id = 0;
 					file.Eof = 0;
@@ -210,6 +218,7 @@ FILE FsFat12_OpenRoot(const char* _fileName)
 					file.CurrentCluster = directory->FirstCluster;
 					file.FileLength = directory->FileSize;
 
+					// Set the file flag basd on the directory attributes
 					if (directory->Attrib == 0x10)
 					{
 						file.Flags = FS_DIRECTORY;
@@ -222,11 +231,13 @@ FILE FsFat12_OpenRoot(const char* _fileName)
 					return file;
 				}
 
+				// Move to the next entry if the current isn't our file.
 				directory++;
 			}
 		}
 	}
 
+	// If no file could be found return an invalid file.
 	file.Flags = FS_INVALID;
 	return file;
 }
@@ -335,10 +346,11 @@ void ConvertFileNameToDOS(const char* _source, char* _destination)
 		return;
 	}
 
-	// Set every character in the destination to space DOS8.3 allows only 11 characters for file names.
+	// Set every character in the destination to space DOS8.3 allows only 11 characters for file names that must be padded with spaces.
 	memset(_destination, ' ', 11);
 
-	int i;
+	// Add only first 8 characters of file name to the DOS name.
+	unsigned int i;
 	for (i = 0; i < 8; i++)
 	{
 		// if the character at i is a "."(extension reached) 

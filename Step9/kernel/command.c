@@ -10,7 +10,7 @@ char cmd_prompt[256] = "Command";
 uint32_t inputLength = 0;
 char currentInput[256];
 
-_Bool running = true;
+bool running = true;
 
 // Start in root directory.
 char currentDirectory[256] = ".\\";
