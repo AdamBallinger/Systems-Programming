@@ -195,11 +195,14 @@ void ProcessCMD(char* _cmd)
 		{
 			ConsoleWriteString("\nFile size (bytes): ");
 			ConsoleWriteInt(file.FileLength, 10);
-			FsFat12_Read(&file, data, file.FileLength);
 			ConsoleWriteString("\nFile data: \n");
-			for (int i = 0; i < file.FileLength; i++)
+			while (file.Eof == 0)
 			{
-				ConsoleWriteCharacter(data[i]);
+				FsFat12_Read(&file, data, 512);
+				for (int i = 0; i < file.FileLength; i++)
+				{
+					ConsoleWriteCharacter(data[i]);
+				}
 			}
 		}
 	}

@@ -31,6 +31,10 @@ pBootSector bootSector;
 // Info about the file system.
 pFileSystemInfo fileSysInfo;
 
+// File allocation table
+uint8_t FAT[SECTOR_SIZE];
+
+
 // Initialises the FAT12 file system.
 void FsFat12_Initialise();
 

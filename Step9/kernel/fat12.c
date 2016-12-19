@@ -1,7 +1,10 @@
 #include <fat12.h>
 
+unsigned char data[SECTOR_SIZE];
+
 void FsFat12_Initialise()
 {
+	// Read boot sector from floppy.
 	bootSector = (pBootSector)FloppyDriveReadSector(0);
 
 	fileSysInfo->numSectors = bootSector->Bpb.NumSectors;
@@ -22,24 +25,6 @@ void FsFat12_Initialise()
 	//ConsoleWriteInt(fileSysInfo->dataOffset, 10);
 	//ConsoleWriteString("\nReserved sectors: ");
 	//ConsoleWriteInt(bootSector->Bpb.ReservedSectors, 10);
-
-	FILE file = FsFat12_Open(".\\folder\\test2.txt");
-	//FILE file = FsFat12_Open(".\\test1.txt");
-	if (file.Flags == FS_FILE)
-	{
-		ConsoleWriteString("\nFile size (bytes): ");
-		ConsoleWriteInt(file.FileLength, 10);
-		unsigned char* data = 0;
-		while(file.Eof == 0)
-		{
-			FsFat12_Read(&file, data, file.FileLength);
-			ConsoleWriteString("\nFile data: \n");
-			for (int i = 0; i < file.FileLength; i++)
-			{
-				ConsoleWriteCharacter(data[i]);
-			}
-		}
-	}
 
 	//PrintBootSectorInfo();
 }
@@ -128,67 +113,58 @@ FILE FsFat12_Open(const char* _fileName)
 	return invalidFile;
 }
 
-
-// Read buffer to store sector data for files. Supports only the first 4k of any files.
-char readBuffer[4096];
-
 unsigned int FsFat12_Read(PFILE _file, unsigned char* _buffer, unsigned int _length)
 {
 	// if length is 0 then likely trying to read a directory so just set it to read an entire sector.
 	if (_length == 0) _length = SECTOR_SIZE;
 
-	// Calculate how many sectors need to be read based on the value of length.
-	//unsigned int sectorsToRead = _length % SECTOR_SIZE == 0 ? 1 : _length / SECTOR_SIZE + 1;
-	//unsigned int bytesRead = 0;
+	// Set any previous data to 0.
+	memset(data, 0, SECTOR_SIZE);
 
 	if (_file)
 	{
-		//ConsoleWriteString("\nReading file ");
-		//ConsoleWriteString(_file->Name);
-		//ConsoleWriteString("\n");
-
+		// Calculate physical sector position on floppy disk where file data is stored.
 		unsigned int physicalSector = fileSysInfo->dataOffset + _file->CurrentCluster;
+		// Read file data to buffer.
 		unsigned char* buffer = (unsigned char*)FloppyDriveReadSector(physicalSector);
 
-		memcpy(_buffer, buffer, _length);
+		// Copy the read data into the buffer parameter.
+		memcpy(_buffer, buffer, SECTOR_SIZE);
 
-		uint8_t FAT[SECTOR_SIZE * 2];
-		unsigned int fatOffset = 6 * 9;
-		unsigned int fatSector = fatOffset + _file->CurrentCluster * 3 / 2;
-		unsigned int tableOffset = fatOffset % _length;
+		unsigned int fatOffset = _file->CurrentCluster + (_file->CurrentCluster / 2);
+		// Fat sector starts at sector 6 as there are 6 reserved sectors. 0 indexed
+		unsigned int fatSector = 6 + (fatOffset / SECTOR_SIZE);
+		// get offset of the sector in the FAT
+		unsigned int tableOffset = fatOffset % SECTOR_SIZE;
 
-		ConsoleWriteString("\nReading FAT sector: ");
-		ConsoleWriteInt(fatSector, 10);
-
+		// Read the sector that contains the logical sector number for the current physical sector.
 		buffer = (unsigned char*)FloppyDriveReadSector(fatSector);
+		// Copy this data to the FAT.
 		memcpy(FAT, buffer, SECTOR_SIZE);
 
-		buffer = (unsigned char*)FloppyDriveReadSector(fatSector + 1);
-		memcpy(FAT + SECTOR_SIZE, buffer, SECTOR_SIZE);
+		// each entry is 12 bits so the cluster need to be loaded into a 2 byte variable.
+		uint16_t nextCluster = *(uint16_t*)&FAT[tableOffset];
 
-		uint8_t nextCluster = *(uint8_t*)&FAT[tableOffset];
-
-		//ConsoleWriteInt(nextCluster, 10);
-		//ConsoleWriteString(",");
-
-		if(_file->CurrentCluster & 0x0001)
+		// Test if cluster entry in FAT is odd or even (test if bit 1 is set)
+		if (_file->CurrentCluster & 0x0001)
 		{
+			// Higher 12 bits
 			nextCluster = nextCluster >> 4;
 		}
 		else
 		{
+			// Lower 12 bits
 			nextCluster = nextCluster & 0x0FFF;
 		}
 
+		// Check if next cluster is at the end of usable sectors or 0 (unused)
 		if (nextCluster >= 0xFF8 || nextCluster == 0)
 		{
-			//ConsoleWriteString("Closing file.");
 			FsFat12_Close(_file);
 			return 0;
 		}
 
-		//ConsoleWriteString("\nNext cluster: ");
-		//ConsoleWriteInt(nextCluster, 16);
+		// set file cluster to the next cluster in the chain.
 		_file->CurrentCluster = nextCluster;
 	}
 
@@ -236,12 +212,10 @@ FILE FsFat12_OpenRoot(const char* _fileName)
 
 					if (directory->Attrib == 0x10)
 					{
-						//ConsoleWriteString("\nFile attrib: directory");
 						file.Flags = FS_DIRECTORY;
 					}
 					else
 					{
-						//ConsoleWriteString("\nFile attrib: file");
 						file.Flags = FS_FILE;
 					}
 
