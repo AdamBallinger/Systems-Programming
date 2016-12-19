@@ -35,54 +35,73 @@ FILE FsFat12_Open(const char* _fileName)
 		char* path = (char*)_fileName;
 		char* p;
 		bool rootDir = true;
+		
+		// check if the path contains a '\'
+		p = strchr(path, '\\'); 
 
-		p = strchr(path, '\\');
+		// if there isn't a '\' in the path then the file must be in the root directory.
 		if (!p)
 		{
 			//ConsoleWriteString("\nLooking in root for: ");
 			//ConsoleWriteString(path);
+
+			// Open the file in the root directory.
 			file = FsFat12_OpenRoot(path);
 
+			// If the opened file has the FILE flag then return the file as we found what we are looking for.
 			if (file.Flags == FS_FILE)
 			{
 				return file;
 			}
 		}
+		// If there was a '\' in the path, then the file we want to open is in a subdirectory.
 		else
 		{
+			// Increment p so that we start on the character next to the '\'.
 			p++;
 
+			// While p points to a character
 			while (p)
 			{
 				char pathName[16];
 				int i;
 				for (i = 0; i < 16; i++)
 				{
+					// if we reach the next folder in given directory or the directory ends, break out
 					if (p[i] == '\\' || p[i] == 0)
 					{
 						break;
 					}
 
+					// otherwise add the character at p to pathname.
 					pathName[i] = p[i];
 				}
-
+				
+				// null terminate path name.
 				pathName[i] = 0;
 
+				// if we are currently in the root directory.
 				if (rootDir)
 				{
 					//ConsoleWriteString("\nOpening ");
 					//ConsoleWriteString(pathName);
 					//ConsoleWriteString(" in root.");
+
+					// open the current file in the root.
 					file = FsFat12_OpenRoot(pathName);
+					// we will now be out of the root directory so set rootDir to false.
 					rootDir = false;
 				}
 				else
 				{
 					//ConsoleWriteString("\nOpening sub directory for ");
 					//ConsoleWriteString(pathName);
+
+					// if we are not in the root directory then open pathname in the current file directory.
 					file = FsFat12_OpenSubDir(file, pathName);
 				}
 
+				// if the file flag is set to invalid no file or directory exists at given pathname
 				if (file.Flags == FS_INVALID)
 				{
 					ConsoleWriteString("\nNo such file or directory at ");
@@ -90,12 +109,17 @@ FILE FsFat12_Open(const char* _fileName)
 					break;
 				}
 
+				// otherwise check if its a file and return the file if it is.
 				if (file.Flags == FS_FILE)
 				{
 					return file;
 				}
 
+				// finally, if the file isn't invalid or a file, it must be a directory so repeat the previous process until
+				// we either find the file we are looking for, or find an invalid file.
 				p = strchr(p + 1, '\\');
+
+				// if there is another '\' in the string of p, then theres another directory in the given filename to open.
 				if (p)
 				{
 					p++;
@@ -239,27 +263,37 @@ FILE FsFat12_OpenRoot(const char* _fileName)
 	return file;
 }
 
+// open a given subdirectory in the given file. _file will always be a directory.
 FILE FsFat12_OpenSubDir(FILE _file, const char* _fileName)
 {
 	FILE file;
 
+	// Get the DOS name for the file we are trying to open.
 	char dosName[12];
 	ConvertFileNameToDOS(_fileName, dosName);
 	dosName[11] = 0;
 
+	// until we reach the end of the file.
 	while (!_file.Eof)
 	{
+		// create a buffer to store data of a single sector.
 		unsigned char buffer[SECTOR_SIZE];
-		FsFat12_Read(&_file, buffer, file.FileLength);
-
+		// Read a single sector of data for the file.
+		FsFat12_Read(&_file, buffer, SECTOR_SIZE);
+		
+		// get the directory entry for the read sector. 
 		pDirectoryEntry subDir = (pDirectoryEntry)buffer;
 
+		// go through all entries in the directory.
 		for (int i = 0; i < 16; i++)
 		{
+			// get name for the current sub directory entry.
 			char name[12];
 			memcpy(name, subDir->Filename, 11);
+			// null terminate for use in a strcmp.
 			name[11] = 0;
 
+			// check if the current directory entry is the file or folder we are looking for.
 			if (strcmp(name, dosName) == 0)
 			{
 				strcpy(file.Name, _fileName);
@@ -281,10 +315,12 @@ FILE FsFat12_OpenSubDir(FILE _file, const char* _fileName)
 				return file;
 			}
 
+			// if not go to the next directory entry.
 			subDir++;
 		}
 	}
 
+	// no file or folder in the directory of file with given filename found.
 	file.Flags = FS_INVALID;
 	return file;
 }
