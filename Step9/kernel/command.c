@@ -15,7 +15,7 @@ bool running = true;
 // Start in root directory.
 char currentDirectory[256] = ".\\";
 
-// Data buffer for read files.
+// Data buffer for read files. limited to reading only the first 4k of a file.
 char data[4096];
 
 void Run()
@@ -58,6 +58,7 @@ void Run()
 					PrintPrompt();
 				}
 
+				// Clear current input
 				memset(currentInput, 0, 256);
 				inputLength = 0;
 			}
@@ -65,6 +66,7 @@ void Run()
 			continue;
 		}
 
+		// Allow only an input length of 256 characters.
 		if (inputLength == 256)
 		{
 			continue;
@@ -76,6 +78,7 @@ void Run()
 	}
 }
 
+// Appends the character source to the end of destination.
 void Append(char* _destination, char _source)
 {
 	size_t len = strlen(_destination);
@@ -83,6 +86,7 @@ void Append(char* _destination, char _source)
 	_destination[len + 1] = 0;
 }
 
+// Appends all of source to destination.
 void AppendAll(char* _destination, const char* _source)
 {
 	while (*_source)
@@ -92,6 +96,7 @@ void AppendAll(char* _destination, const char* _source)
 	}
 }
 
+// Remove last character of destination.
 void RemoveLast(char* _destination)
 {
 	const char* source = _destination;
@@ -99,6 +104,7 @@ void RemoveLast(char* _destination)
 	_destination[len - 1] = 0;
 }
 
+// Copy source to destination and null terminate afterwards.
 void CopyTo(char* _destination, const char* _source)
 {
 	size_t len = strlen(_source);
@@ -217,23 +223,27 @@ void ProcessCMD(char* _cmd)
 			return;
 		}
 
+		// Stay in current directory.
 		if (strcmp(dir, ".") == 0)
 		{
-			ConsoleWriteString("\n");
-			ConsoleWriteString(currentDirectory);
+			//ConsoleWriteString("\n");
+			//ConsoleWriteString(currentDirectory);
 		}
+		// Move back a directory (as long as we are not in the root directory).
 		else if (strcmp(dir, "..") == 0)
 		{
 			DirectoryBack();
-			ConsoleWriteString("\n");
-			ConsoleWriteString(currentDirectory);
+			//ConsoleWriteString("\n");
+			//ConsoleWriteString(currentDirectory);
 		}
 		else
 		{
+			// Add the given directory to the current directory.
 			AppendAll(currentDirectory, dir);
 			Append(currentDirectory, '\\');
 		}
 	}
+	// print the current working directory.
 	else if (strcmp("pwd", cmdArg) == 0)
 	{
 		ConsoleWriteString("\n");
@@ -295,5 +305,6 @@ void GetStringArgument(int _argIndex, char* _dest, char* _source)
 		}
 	}
 
+	// no argument at given index or index was out of range of total arguments in source.
 	_dest[0] = 0;
 }
