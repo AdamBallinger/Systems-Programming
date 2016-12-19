@@ -8,7 +8,7 @@ void FsFat12_Initialise()
 	bootSector = (pBootSector)FloppyDriveReadSector(0);
 
 	fileSysInfo->numSectors = bootSector->Bpb.NumSectors;
-	fileSysInfo->fatOffset = 1;
+	fileSysInfo->fatOffset = bootSector->Bpb.ReservedSectors;
 	fileSysInfo->fatSize = bootSector->Bpb.SectorsPerFat;
 	fileSysInfo->fatEntrySize = 8;
 	fileSysInfo->numRootEntries = bootSector->Bpb.NumDirEntries;
@@ -133,7 +133,7 @@ unsigned int FsFat12_Read(PFILE _file, unsigned char* _buffer, unsigned int _len
 
 		unsigned int fatOffset = _file->CurrentCluster + (_file->CurrentCluster / 2);
 		// Fat sector starts at sector 6 as there are 6 reserved sectors. 0 indexed
-		unsigned int fatSector = 6 + (fatOffset / SECTOR_SIZE);
+		unsigned int fatSector = fileSysInfo->fatOffset + (fatOffset / SECTOR_SIZE);
 		// get offset of the sector in the FAT
 		unsigned int tableOffset = fatOffset % SECTOR_SIZE;
 
