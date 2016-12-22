@@ -37,8 +37,7 @@ void FsFat12_Initialise();
 // Opens a file from the given directory.
 FILE FsFat12_Open(const char* _fileName);
 
-// Reads a file from disk, returning number of read bytes and storing the contents
-// in given buffer.
+// Reads a file from disk and places its contents inside the given buffer.
 unsigned int FsFat12_Read(PFILE _file, unsigned char* _buffer, unsigned int _length);
 
 // Sets EOF flag of given file to 1.
