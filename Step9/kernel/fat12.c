@@ -164,15 +164,15 @@ unsigned int FsFat12_Read(PFILE _file, unsigned char* _buffer, unsigned int _len
 		uint16_t nextCluster = *(uint16_t*)&FAT[tableOffset];
 
 		// Test if cluster entry in FAT is odd or even (test if bit 1 is set)
-		if (_file->CurrentCluster & 0x0001)
+		if (_file->CurrentCluster & 1)
 		{
-			// Higher 12 bits
+			// Higher 12 bits if odd
 			nextCluster = nextCluster >> 4;
 		}
 		else
 		{
-			// Lower 12 bits
-			nextCluster = nextCluster & 0x0FFF;
+			// Lower 12 bits if even
+			nextCluster = nextCluster & 0xFFF;
 		}
 
 		// Check if next cluster is at the end of usable sectors or 0 (unused)
