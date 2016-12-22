@@ -208,8 +208,6 @@ FILE FsFat12_OpenRoot(const char* _fileName)
 		// Create the DOS 8.3 name for the file we are trying to open.
 		char dosName[12];
 		ConvertFileNameToDOS(_fileName, dosName);
-		// Null terminate the name so it can be used in a strcmp
-		dosName[11] = 0;
 
 		// Read each sector in the root directory. (224 total root entries * 32 bytes per entry = 7168. 7168 / 512 (bytes per sector) = 14)
 		for (int sector = 0; sector < fileSysInfo->rootSize; sector++)
@@ -268,7 +266,13 @@ FILE FsFat12_OpenSubDir(FILE _file, const char* _fileName)
 	// Get the DOS name for the file we are trying to open.
 	char dosName[12];
 	ConvertFileNameToDOS(_fileName, dosName);
-	dosName[11] = 0;
+
+	bool useParentDir = false;
+
+	if (strcmp(_fileName, "..") == 0)
+	{
+		useParentDir = true;
+	}
 
 	// until we reach the end of the file.
 	while (!_file.Eof)
@@ -378,6 +382,8 @@ void ConvertFileNameToDOS(const char* _source, char* _destination)
 
 	// Set every character in the destination to space DOS8.3 allows only 11 characters for file names that must be padded with spaces.
 	memset(_destination, ' ', 11);
+	// null terminate the file name so it can be used in strcmp
+	_destination[11] = 0;
 
 	// Add only first 8 characters of file name to the DOS name.
 	unsigned int i;
