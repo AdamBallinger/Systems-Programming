@@ -136,9 +136,6 @@ FILE FsFat12_Open(const char* _fileName)
 
 unsigned int FsFat12_Read(PFILE _file, unsigned char* _buffer, unsigned int _length)
 {
-	// if length is 0 then likely trying to read a directory so just set it to read an entire sector.
-	if (_length == 0) _length = SECTOR_SIZE;
-
 	// Set any previous data to 0.
 	memset(data, 0, SECTOR_SIZE);
 
@@ -153,7 +150,7 @@ unsigned int FsFat12_Read(PFILE _file, unsigned char* _buffer, unsigned int _len
 		memcpy(_buffer, buffer, SECTOR_SIZE);
 
 		unsigned int fatOffset = _file->CurrentCluster + (_file->CurrentCluster / 2);
-		// Fat sector starts at sector 6 as there are 6 reserved sectors. 0 indexed
+		// Calculate which sector on the disk contains the FAT info for the given file.
 		unsigned int fatSector = fileSysInfo->fatOffset + (fatOffset / SECTOR_SIZE);
 		// get offset of the sector in the FAT
 		unsigned int tableOffset = fatOffset % SECTOR_SIZE;
